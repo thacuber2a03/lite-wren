@@ -54,3 +54,4 @@ dkms.conf
 compile_flags.txt
 lite
 lua-data
+error.txt
