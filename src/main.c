@@ -88,12 +88,12 @@ static void error_func(WrenVM* vm, WrenErrorType type,
 
 static const char* preludeModuleName = "prelude";
 static const char* prelude = "\
-import core for Core                             \n\
+import \"core\" for Core                         \n\
                                                  \n\
 class Prelude {                                  \n\
   foreign static ARGS                            \n\
-  static VERSION { " VERSION " }                 \n\
-  static PATHSEP { " PATHSEP " }                 \n\
+  static VERSION { \"" VERSION "\" }             \n\
+  static PATHSEP { \"" PATHSEP "\" }             \n\
   foreign static PLATFORM                        \n\
   foreign static SCALE                           \n\
   foreign static EXEFILE                         \n\
@@ -108,7 +108,7 @@ class Prelude {                                  \n\
   }                                              \n\
 }                                                \n\
                                                  \n\
-class System {                                   \n\
+class Program {                                  \n\
   foreign static poll_event()                    \n\
   foreign static wait_event(seconds)             \n\
   foreign static set_cursor(cursor)              \n\
@@ -209,7 +209,7 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
 
 static WrenForeignClassMethods foreign_class(WrenVM* vm, const char* module, const char* className)
 {
-  return api_foreign_class(vm, module, className);
+  return api_foreign_class(vm, className);
 }
 
 #define PROPREF(name) foreign_##name
@@ -228,16 +228,16 @@ static WrenForeignMethodFn foreign_method(WrenVM* vm,
     const char* module, const char* className, bool isStatic,
     const char* signature)
 {
-  if (!strcmp(className, "Prelude"))
+  if (!strcmp(module, "prelude"))
   {
-    if      (!strcmp(signature, "ARGS"    )) return PROPREF(ARGS);
-    else if (!strcmp(signature, "PLATFORM")) return PROPREF(PLATFORM);
-    else if (!strcmp(signature, "SCALE"   )) return PROPREF(SCALE);
-    else if (!strcmp(signature, "EXEFILE" )) return PROPREF(EXEFILE);
-  }
-  else
-  {
-    api_foreign_method(vm, module, className, isStatic, signature);
+    if (!strcmp(className, "Prelude"))
+    {
+      if      (!strcmp(signature, "ARGS"    )) return PROPREF(ARGS);
+      else if (!strcmp(signature, "PLATFORM")) return PROPREF(PLATFORM);
+      else if (!strcmp(signature, "SCALE"   )) return PROPREF(SCALE);
+      else if (!strcmp(signature, "EXEFILE" )) return PROPREF(EXEFILE);
+    }
+    else api_foreign_method(vm, className, isStatic, signature);
   }
 
   return NULL;
