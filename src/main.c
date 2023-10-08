@@ -122,6 +122,8 @@ class Program {                                     \n\
   foreign static sleep(seconds)                     \n\
   foreign static exec(command)                      \n\
   foreign static fuzzy_match(str, pattern)          \n\
+  foreign static exit(code)                         \n\
+  static exit() { exit(0) }                         \n\
 }                                                   \n\
 \n\
 class Renderer {                                    \n\
@@ -130,6 +132,7 @@ class Renderer {                                    \n\
   foreign static begin_frame()                      \n\
   foreign static end_frame()                        \n\
   foreign static set_clip_rect(x, y, w, h)          \n\
+  foreign static set_clip_rect(l)                   \n\
   foreign static draw_rect(x, y, w, h, color)       \n\
   foreign static draw_text(font, text, x, y, color) \n\
 }                                                   \n\

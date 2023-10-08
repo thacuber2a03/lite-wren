@@ -440,6 +440,8 @@ static void f_fuzzy_match(WrenVM* vm)
   wrenSetSlotDouble(vm, 0, score - (int) strlen(str));
 }
 
+static void f_exit(WrenVM* vm) { exit(wrenGetSlotDouble(vm, 1)); }
+
 APIRegistry program_api[] = {
   { "poll_event()",             f_poll_event          },
   { "wait_event(_)",            f_wait_event          },
@@ -458,7 +460,8 @@ APIRegistry program_api[] = {
   { "sleep(_)",                 f_sleep               },
   { "exec(_)",                  f_exec                },
   { "fuzzy_match(_,_)",         f_fuzzy_match         },
-  { NULL, NULL }
+  { "exit(_)",                  f_exit                },
+  { NULL,                       NULL                  },
 };
 
 WrenForeignMethodFn program_foreign_method(WrenVM* vm, bool isStatic, const char* signature)

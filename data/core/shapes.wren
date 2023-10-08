@@ -15,6 +15,8 @@ class Rect {
 	y=(v) { _y=v }
 	width=(v) { _w=v }
 	height=(v) { _h=v }
+
+	asList { [x, y, width, height] }
 }
 
 class Point {
@@ -28,4 +30,6 @@ class Point {
 
 	x=(v) { _x=v }
 	y=(v) { _y=v }
+
+	asList { [x, y] }
 }

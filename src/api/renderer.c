@@ -42,7 +42,7 @@ static void f_get_size(WrenVM* vm)
 
   wrenEnsureSlots(vm, 2);
   wrenSetSlotNewList(vm, 0);
-  
+
   wrenSetSlotDouble(vm, 1, w);
   wrenInsertInList(vm, 0, -1, 1);
   wrenSetSlotDouble(vm, 1, h);
@@ -72,6 +72,24 @@ static void f_set_clip_rect(WrenVM* vm)
   wrenSetSlotNull(vm, 0);
 }
 
+static void f_set_clip_rect_list(WrenVM* vm)
+{
+  RenRect rect;
+  wrenEnsureSlots(vm, 2);
+
+  wrenGetListElement(vm, 1, 0, 0);
+  rect.x = wrenGetSlotDouble(vm, 0);
+  wrenGetListElement(vm, 1, 1, 0);
+  rect.y = wrenGetSlotDouble(vm, 0);
+  wrenGetListElement(vm, 1, 2, 0);
+  rect.width = wrenGetSlotDouble(vm, 0);
+  wrenGetListElement(vm, 1, 3, 0);
+  rect.height = wrenGetSlotDouble(vm, 0);
+  rencache_set_clip_rect(rect);
+
+  wrenSetSlotNull(vm, 0);
+}
+
 static void f_draw_rect(WrenVM* vm)
 {
   RenRect rect;
@@ -96,14 +114,15 @@ static void f_draw_text(WrenVM* vm)
 }
 
 APIRegistry renderer_api[] = {
-  { "show_debug(_)",          f_show_debug    },
-  { "get_size()",             f_get_size      },
-  { "begin_frame()",          f_begin_frame   },
-  { "end_frame()",            f_end_frame     },
-  { "set_clip_rect(_,_,_,_)", f_set_clip_rect },
-  { "draw_rect(_,_,_,_,_)",   f_draw_rect     },
-  { "draw_text(_,_,_,_,_)",   f_draw_text     },
-  { NULL,                     NULL            }
+  { "show_debug(_)",          f_show_debug         },
+  { "get_size()",             f_get_size           },
+  { "begin_frame()",          f_begin_frame        },
+  { "end_frame()",            f_end_frame          },
+  { "set_clip_rect(_)",       f_set_clip_rect_list },
+  { "set_clip_rect(_,_,_,_)", f_set_clip_rect      },
+  { "draw_rect(_,_,_,_,_)",   f_draw_rect          },
+  { "draw_text(_,_,_,_,_)",   f_draw_text          },
+  { NULL,                     NULL                 }
 };
 
 WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, bool isStatic, const char* signature)
@@ -111,7 +130,8 @@ WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, bool isStatic, const cha
   for (int i = 0; renderer_api[i].signature != NULL; i++)
   {
     APIRegistry* api = renderer_api + i;
-    if (!strcmp(signature, api->signature)) return api->func;
+    if (!strncmp(signature, api->signature, strlen(signature)))
+      return api->func;
   }
   return NULL;
 }
