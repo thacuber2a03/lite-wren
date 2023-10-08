@@ -220,7 +220,7 @@ static WrenForeignMethodFn foreign_method(WrenVM* vm,
       else if (!strcmp(signature, "SCALE"   )) return PROPREF(SCALE);
       else if (!strcmp(signature, "EXEFILE" )) return PROPREF(EXEFILE);
     }
-    else api_foreign_method(vm, className, isStatic, signature);
+    else return api_foreign_method(vm, className, isStatic, signature);
   }
 
   return NULL;
