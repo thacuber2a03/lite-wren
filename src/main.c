@@ -13,7 +13,7 @@
   #include <mach-o/dyld.h>
 #endif
 
-#define VERSION "0.1"
+#define VERSION "1.11"
 
 #ifdef _WIN32
   #define PATHSEP "\\"
@@ -78,7 +78,7 @@ static void error_func(WrenVM* vm, WrenErrorType type,
       fprintf(stderr, "Error: %s\n", message);
       break;
     case WREN_ERROR_STACK_TRACE:
-      fprintf(stderr, "module %s, line %i, in %s\n", module, line, message);
+      fprintf(stderr, "[module %s, line %i] in %s\n", module, line, message);
       break;
   }
 }
@@ -88,45 +88,51 @@ static void error_func(WrenVM* vm, WrenErrorType type,
 
 static const char* preludeModuleName = "prelude";
 static const char* prelude = "\
-import \"core\" for Core                         \n\
-                                                 \n\
-class Prelude {                                  \n\
-  foreign static ARGS                            \n\
-  static VERSION { \"" VERSION "\" }             \n\
-  static PATHSEP { \"" PATHSEP "\" }             \n\
-  foreign static PLATFORM                        \n\
-  foreign static SCALE                           \n\
-  foreign static EXEFILE                         \n\
-                                                 \n\
-  static start() {                               \n\
-    var err = Fiber.new {                        \n\
-      Core.init()                                \n\
-      Core.run()                                 \n\
-    }.try()                                      \n\
-                                                 \n\
-    if (err != null) Core.on_error(err)          \n\
-  }                                              \n\
-}                                                \n\
-                                                 \n\
-class Program {                                  \n\
-  foreign static poll_event()                    \n\
-  foreign static wait_event(seconds)             \n\
-  foreign static set_cursor(cursor)              \n\
-  foreign static set_window_title(title)         \n\
-  foreign static set_window_mode(mode)           \n\
-  foreign static window_has_focus()              \n\
-  foreign static show_confirm_dialog(title, msg) \n\
-  foreign static chdir(dir)                      \n\
-  foreign static list_dir(path)                  \n\
-  foreign static absolute_path(path)             \n\
-  foreign static get_file_info(file)             \n\
-  foreign static get_clipboard()                 \n\
-  foreign static set_clipboard(contents)         \n\
-  foreign static get_time()                      \n\
-  foreign static sleep(seconds)                  \n\
-  foreign static exec(command)                   \n\
-  foreign static fuzzy_match(str, pattern)       \n\
-}                                                \n\
+import \"core\" for Core                            \n\
+\n\
+class Prelude {                                     \n\
+  foreign static ARGS                               \n\
+  static VERSION { \"" VERSION "\" }                \n\
+  static PATHSEP { \"" PATHSEP "\" }                \n\
+  foreign static PLATFORM                           \n\
+  foreign static SCALE                              \n\
+  foreign static EXEFILE                            \n\
+                                                    \n\
+  static start() {                                  \n\
+    Core.init()                                     \n\
+    Core.run()                                      \n\
+  }                                                 \n\
+}                                                   \n\
+\n\
+class Program {                                     \n\
+  foreign static poll_event()                       \n\
+  foreign static wait_event(seconds)                \n\
+  foreign static set_cursor(cursor)                 \n\
+  foreign static set_window_title(title)            \n\
+  foreign static set_window_mode(mode)              \n\
+  foreign static window_has_focus()                 \n\
+  foreign static show_confirm_dialog(title, msg)    \n\
+  foreign static chdir(dir)                         \n\
+  foreign static list_dir(path)                     \n\
+  foreign static absolute_path(path)                \n\
+  foreign static get_file_info(file)                \n\
+  foreign static get_clipboard()                    \n\
+  foreign static set_clipboard(contents)            \n\
+  foreign static get_time()                         \n\
+  foreign static sleep(seconds)                     \n\
+  foreign static exec(command)                      \n\
+  foreign static fuzzy_match(str, pattern)          \n\
+}                                                   \n\
+\n\
+class Renderer {                                    \n\
+  foreign static show_debug(enable)                 \n\
+  foreign static get_size()                         \n\
+  foreign static begin_frame()                      \n\
+  foreign static end_frame()                        \n\
+  foreign static set_clip_rect(x, y, w, h)          \n\
+  foreign static draw_rect(x, y, w, h, color)       \n\
+  foreign static draw_text(font, text, x, y, color) \n\
+}                                                   \n\
 ";
 
 static void import_complete(WrenVM* vm, const char* name, WrenLoadModuleResult res)
@@ -138,7 +144,7 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
 {
   WrenLoadModuleResult res = { NULL, import_complete, NULL };
 
-  if (!strcmp(name, "prelude"))
+  if (!strcmp(name, preludeModuleName))
   {
     res.source = prelude;
     return res;
@@ -153,9 +159,18 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
   sprintf(path, "%s%s%s%s", DATA_FOLDER, PATHSEP, name, PATHSEP);
 
   struct stat s;
-  if (stat(path, &s) < 0) return res;
+  if (stat(path, &s) < 0)
+  {
+    /* look for a file with that name instead */
+    path[(--len)-2] = '\0';
+    len += sizeof ".wren";
+    path = realloc(path, len);
+    strcat(path, ".wren");
+    path[len-1] = '\0';
 
-  if (S_ISDIR(s.st_mode))
+    if (stat(path, &s) < 0) return res;
+  }
+  else
   {
     /* open it's init.wren file */
     len += sizeof(INIT_FILENAME);
@@ -163,16 +178,8 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
     check_alloc(path);
     strcat(path, INIT_FILENAME);
     path[len-1] = '\0';
-  }
-  else
-  {
-    /* look for a file with that name instead */
-    path[len-2] = '\0';
-    len = len - 1 + sizeof(".wren");
-    path = realloc(path, len);
-    check_alloc(path);
-    strcat(path, ".wren");
-    path[len-1] = '\0';
+
+    if (stat(path, &s) < 0) return res;
   }
 
   FILE* fp = fopen(path, "rb");
@@ -184,6 +191,7 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
   char* source = malloc(sourceLen);
   check_alloc(source);
   if (!fread(source, sizeof(char), sourceLen, fp)) return res;
+  source[sourceLen-1] = '\0';
   res.source = source;
 
   fclose(fp);
@@ -208,10 +216,10 @@ PROPERTY(SCALE);
 PROPERTY(EXEFILE);
 
 static WrenForeignMethodFn foreign_method(WrenVM* vm,
-    const char* module, const char* className, bool isStatic,
-    const char* signature)
+  const char* module, const char* className, bool isStatic,
+  const char* signature)
 {
-  if (!strcmp(module, "prelude"))
+  if (!strcmp(module, preludeModuleName))
   {
     if (!strcmp(className, "Prelude"))
     {
@@ -311,14 +319,22 @@ int main(int argc, char **argv) {
   SCALE = wrenGetSlotHandle(vm, 0);
 
   /* compile prelude */
-  (void) wrenInterpret(vm, preludeModuleName, prelude);
+  WrenInterpretResult res = wrenInterpret(vm, preludeModuleName, prelude);
 
-  /* start editor */
-  wrenEnsureSlots(vm, 1);
-  wrenGetVariable(vm, preludeModuleName, "Prelude", 0);
-  WrenHandle* preludeStartHandle = wrenMakeCallHandle(vm, "start()");
-  wrenCall(vm, preludeStartHandle);
-  wrenReleaseHandle(vm, preludeStartHandle);
+  WrenHandle* preludeStartHandle;
+  switch (res) {
+    case WREN_RESULT_SUCCESS:
+      /* start editor */
+      wrenEnsureSlots(vm, 1);
+      wrenGetVariable(vm, preludeModuleName, "Prelude", 0);
+      preludeStartHandle = wrenMakeCallHandle(vm, "start()");
+      wrenCall(vm, preludeStartHandle);
+      wrenReleaseHandle(vm, preludeStartHandle);
+      break;
+    case WREN_RESULT_RUNTIME_ERROR:
+    case WREN_RESULT_COMPILE_ERROR:
+      break;
+  }
 
   /* end program */
   wrenReleaseHandle(vm, ARGS);

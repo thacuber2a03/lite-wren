@@ -2,106 +2,116 @@
 #include "renderer.h"
 #include "rencache.h"
 
-/*
-static RenColor checkcolor(lua_State *L, int idx, int def) {
+static RenColor checkcolor(WrenVM* vm, int idx, int def)
+{
   RenColor color;
-  if (lua_isnoneornil(L, idx)) {
+  if (idx >= wrenGetSlotCount(vm) || wrenGetSlotType(vm, idx) == WREN_TYPE_NULL)
+  {
     return (RenColor) { def, def, def, 255 };
   }
-  lua_rawgeti(L, idx, 1);
-  lua_rawgeti(L, idx, 2);
-  lua_rawgeti(L, idx, 3);
-  lua_rawgeti(L, idx, 4);
-  color.r = luaL_checknumber(L, -4);
-  color.g = luaL_checknumber(L, -3);
-  color.b = luaL_checknumber(L, -2);
-  color.a = luaL_optnumber(L, -1, 255);
-  lua_pop(L, 4);
+
+  wrenEnsureSlots(vm, idx+1);
+
+  wrenGetListElement(vm, idx, 0, idx+1);
+  color.r = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+  wrenGetListElement(vm, idx, 1, idx+1);
+  color.g = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+  wrenGetListElement(vm, idx, 2, idx+1);
+  color.b = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+
+  if (wrenGetListCount(vm, idx) >= 4)
+  {
+    wrenGetListElement(vm, idx, 0, idx+1);
+    color.a = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+  }
+  else color.a = 255;
+
   return color;
 }
 
-
-static int f_show_debug(lua_State *L) {
-  luaL_checkany(L, 1);
-  rencache_show_debug(lua_toboolean(L, 1));
-  return 0;
+static void f_show_debug(WrenVM* vm)
+{
+  rencache_show_debug(wrenGetSlotBool(vm, 1));
+  wrenSetSlotNull(vm, 0);
 }
 
-
-static int f_get_size(lua_State *L) {
+static void f_get_size(WrenVM* vm)
+{
   int w, h;
   ren_get_size(&w, &h);
-  lua_pushnumber(L, w);
-  lua_pushnumber(L, h);
-  return 2;
+
+  wrenEnsureSlots(vm, 2);
+  wrenSetSlotNewList(vm, 0);
+
+  wrenSetSlotDouble(vm, 1, w);
+  wrenSetListElement(vm, 0, 0, 1);
+  wrenSetSlotDouble(vm, 1, h);
+  wrenSetListElement(vm, 0, 1, 1);
 }
 
-
-static int f_begin_frame(lua_State *L) {
+static void f_begin_frame(WrenVM* vm)
+{
   rencache_begin_frame();
-  return 0;
+  wrenSetSlotNull(vm, 0);
 }
 
-
-static int f_end_frame(lua_State *L) {
+static void f_end_frame(WrenVM* vm)
+{
   rencache_end_frame();
-  return 0;
+  wrenSetSlotNull(vm, 0);
 }
 
-
-static int f_set_clip_rect(lua_State *L) {
+static void f_set_clip_rect(WrenVM* vm)
+{
   RenRect rect;
-  rect.x = luaL_checknumber(L, 1);
-  rect.y = luaL_checknumber(L, 2);
-  rect.width = luaL_checknumber(L, 3);
-  rect.height = luaL_checknumber(L, 4);
+  rect.x = wrenGetSlotDouble(vm, 1);
+  rect.y = wrenGetSlotDouble(vm, 2);
+  rect.width = wrenGetSlotDouble(vm, 3);
+  rect.height = wrenGetSlotDouble(vm, 4);
   rencache_set_clip_rect(rect);
-  return 0;
+  wrenSetSlotNull(vm, 0);
 }
 
-
-static int f_draw_rect(lua_State *L) {
+static void f_draw_rect(WrenVM* vm)
+{
   RenRect rect;
-  rect.x = luaL_checknumber(L, 1);
-  rect.y = luaL_checknumber(L, 2);
-  rect.width = luaL_checknumber(L, 3);
-  rect.height = luaL_checknumber(L, 4);
-  RenColor color = checkcolor(L, 5, 255);
+  rect.x = wrenGetSlotDouble(vm, 1);
+  rect.y = wrenGetSlotDouble(vm, 2);
+  rect.width = wrenGetSlotDouble(vm, 3);
+  rect.height = wrenGetSlotDouble(vm, 4);
+  RenColor color = checkcolor(vm, 5, 255);
   rencache_draw_rect(rect, color);
-  return 0;
+  wrenSetSlotNull(vm, 0);
 }
 
-
-static int f_draw_text(lua_State *L) {
-  RenFont **font = luaL_checkudata(L, 1, API_TYPE_FONT);
-  const char *text = luaL_checkstring(L, 2);
-  int x = luaL_checknumber(L, 3);
-  int y = luaL_checknumber(L, 4);
-  RenColor color = checkcolor(L, 5, 255);
+static void f_draw_text(WrenVM* vm)
+{
+  RenFont** font = wrenGetSlotForeign(vm, 1);
+  const char* text = wrenGetSlotString(vm, 2);
+  int x = wrenGetSlotDouble(vm, 3);
+  int y = wrenGetSlotDouble(vm, 4);
+  RenColor color = checkcolor(vm, 5, 255);
   x = rencache_draw_text(*font, text, x, y, color);
-  lua_pushnumber(L, x);
-  return 1;
+  wrenSetSlotDouble(vm, 0, x);
 }
 
-
-static const luaL_Reg lib[] = {
-  { "show_debug",    f_show_debug    },
-  { "get_size",      f_get_size      },
-  { "begin_frame",   f_begin_frame   },
-  { "end_frame",     f_end_frame     },
-  { "set_clip_rect", f_set_clip_rect },
-  { "draw_rect",     f_draw_rect     },
-  { "draw_text",     f_draw_text     },
-  { NULL,            NULL            }
+APIRegistry renderer_api[] = {
+  { "show_debug(_)",          f_show_debug    },
+  { "get_size()",             f_get_size      },
+  { "begin_frame()",          f_begin_frame   },
+  { "end_frame()",            f_end_frame     },
+  { "set_clip_rect(_,_,_,_)", f_set_clip_rect },
+  { "draw_rect(_,_,_,_,_)",   f_draw_rect     },
+  { "draw_text(_,_,_,_,_)",   f_draw_text     },
+  { NULL,                     NULL            }
 };
 
-
-int luaopen_renderer_font(lua_State *L);
-
-int luaopen_renderer(lua_State *L) {
-  luaL_newlib(L, lib);
-  luaopen_renderer_font(L);
-  lua_setfield(L, -2, "font");
-  return 1;
+WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, bool isStatic, const char* signature)
+{
+  for (int i = 0; renderer_api[i].signature != NULL; i++)
+  {
+    APIRegistry* api = renderer_api + i;
+    if (!strcmp(signature, api->signature)) return api->func;
+  }
+  return NULL;
 }
-*/

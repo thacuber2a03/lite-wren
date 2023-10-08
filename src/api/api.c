@@ -2,6 +2,7 @@
 #include <string.h>
 
 WrenForeignMethodFn program_foreign_method(WrenVM* vm, bool isStatic, const char* signature);
+WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, bool isStatic, const char* signature);
 
 WrenForeignClassMethods api_foreign_class(WrenVM* vm, const char* className)
 {
@@ -10,6 +11,7 @@ WrenForeignClassMethods api_foreign_class(WrenVM* vm, const char* className)
 
 WrenForeignMethodFn api_foreign_method(WrenVM* vm, const char* className, bool isStatic, const char* signature)
 {
-  if (!strcmp(className, "Program")) return program_foreign_method(vm, isStatic, signature);
+  if (!strcmp(className, "Program" )) return program_foreign_method(vm, isStatic, signature);
+  if (!strcmp(className, "Renderer")) return renderer_foreign_method(vm, isStatic, signature);
   return NULL;
 }

@@ -444,33 +444,32 @@ static void f_fuzzy_match(WrenVM* vm)
 }
 
 APIRegistry program_api[] = {
-  { "poll_event",          f_poll_event          },
-  { "wait_event",          f_wait_event          },
-  { "set_cursor",          f_set_cursor          },
-  { "set_window_title",    f_set_window_title    },
-  { "set_window_mode",     f_set_window_mode     },
-  { "window_has_focus",    f_window_has_focus    },
-  { "show_confirm_dialog", f_show_confirm_dialog },
-  { "chdir",               f_chdir               },
-  { "list_dir",            f_list_dir            },
-  { "absolute_path",       f_absolute_path       },
-  { "get_file_info",       f_get_file_info       },
-  { "get_clipboard",       f_get_clipboard       },
-  { "set_clipboard",       f_set_clipboard       },
-  { "get_time",            f_get_time            },
-  { "sleep",               f_sleep               },
-  { "exec",                f_exec                },
-  { "fuzzy_match",         f_fuzzy_match         },
+  { "poll_event()",             f_poll_event          },
+  { "wait_event(_)",            f_wait_event          },
+  { "set_cursor(_)",            f_set_cursor          },
+  { "set_window_title(_)",      f_set_window_title    },
+  { "set_window_mode(_)",       f_set_window_mode     },
+  { "window_has_focus()",       f_window_has_focus    },
+  { "show_confirm_dialog(_,_)", f_show_confirm_dialog },
+  { "chdir(_)",                 f_chdir               },
+  { "list_dir(_)",              f_list_dir            },
+  { "absolute_path(_)",         f_absolute_path       },
+  { "get_file_info(_)",         f_get_file_info       },
+  { "get_clipboard()",          f_get_clipboard       },
+  { "set_clipboard(_)",         f_set_clipboard       },
+  { "get_time()",               f_get_time            },
+  { "sleep(_)",                 f_sleep               },
+  { "exec(_)",                  f_exec                },
+  { "fuzzy_match(_,_)",         f_fuzzy_match         },
   { NULL, NULL }
 };
 
 WrenForeignMethodFn program_foreign_method(WrenVM* vm, bool isStatic, const char* signature)
 {
-  for (int i = 0; program_api[i].name != NULL; i++)
+  for (int i = 0; program_api[i].signature != NULL; i++)
   {
     APIRegistry* api = program_api + i;
-    if (!strncmp(signature, api->name, strlen(api->name)))
-      return api->func;
+    if (!strcmp(signature, api->signature)) return api->func;
   }
   return NULL;
 }

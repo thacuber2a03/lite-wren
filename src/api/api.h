@@ -4,7 +4,7 @@
 #include "lib/wren/wren.h"
 
 typedef struct {
-  const char* name;
+  const char* signature;
   WrenForeignMethodFn func;
 } APIRegistry;
 
