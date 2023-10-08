@@ -61,10 +61,7 @@ static void get_exe_filename(char *buf, int sz) {
 #endif
 }
 
-static void write_func(WrenVM* vm, const char* text)
-{
-  printf("%s", text);
-}
+static void write_func(WrenVM* vm, const char* text) { printf("%s", text); }
 
 static void error_func(WrenVM* vm, WrenErrorType type,
                       const char* module, int line, const char* message)
@@ -103,7 +100,10 @@ class Prelude {                                     \n\
     Core.run()                                      \n\
   }                                                 \n\
 }                                                   \n\
-\n\
+";
+
+static const char* apiModuleName = "api";
+static const char* api = "\
 class Program {                                     \n\
   foreign static poll_event()                       \n\
   foreign static wait_event(seconds)                \n\
@@ -137,7 +137,8 @@ class Renderer {                                    \n\
 
 static void import_complete(WrenVM* vm, const char* name, WrenLoadModuleResult res)
 {
-  if (res.source && res.source != prelude) free((char*) res.source);
+  if (res.source && res.source != prelude && res.source != api)
+    free((char*) res.source);
 }
 
 static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
@@ -147,6 +148,12 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
   if (!strcmp(name, preludeModuleName))
   {
     res.source = prelude;
+    return res;
+  }
+
+  if (!strcmp(name, apiModuleName))
+  {
+    res.source = api;
     return res;
   }
 
@@ -228,7 +235,10 @@ static WrenForeignMethodFn foreign_method(WrenVM* vm,
       else if (!strcmp(signature, "SCALE"   )) return PROPREF(SCALE);
       else if (!strcmp(signature, "EXEFILE" )) return PROPREF(EXEFILE);
     }
-    else return api_foreign_method(vm, className, isStatic, signature);
+  }
+  else if (!strcmp(module, apiModuleName))
+  {
+    return api_foreign_method(vm, className, isStatic, signature);
   }
 
   return NULL;
@@ -308,7 +318,6 @@ int main(int argc, char **argv) {
   wrenSetSlotString(vm, 0, SDL_GetPlatform());
   PLATFORM = wrenGetSlotHandle(vm, 0);
 
-  wrenEnsureSlots(vm, 1);
   char exename[2048];
   get_exe_filename(exename, sizeof(exename));
   wrenSetSlotString(vm, 0, exename);
@@ -319,21 +328,17 @@ int main(int argc, char **argv) {
   SCALE = wrenGetSlotHandle(vm, 0);
 
   /* compile prelude */
+  wrenInterpret(vm, apiModuleName, api);
   WrenInterpretResult res = wrenInterpret(vm, preludeModuleName, prelude);
 
   WrenHandle* preludeStartHandle;
-  switch (res) {
-    case WREN_RESULT_SUCCESS:
-      /* start editor */
-      wrenEnsureSlots(vm, 1);
-      wrenGetVariable(vm, preludeModuleName, "Prelude", 0);
-      preludeStartHandle = wrenMakeCallHandle(vm, "start()");
-      wrenCall(vm, preludeStartHandle);
-      wrenReleaseHandle(vm, preludeStartHandle);
-      break;
-    case WREN_RESULT_RUNTIME_ERROR:
-    case WREN_RESULT_COMPILE_ERROR:
-      break;
+  if (res == WREN_RESULT_SUCCESS)
+  {
+    wrenEnsureSlots(vm, 1);
+    wrenGetVariable(vm, preludeModuleName, "Prelude", 0);
+    preludeStartHandle = wrenMakeCallHandle(vm, "start()");
+    wrenCall(vm, preludeStartHandle);
+    wrenReleaseHandle(vm, preludeStartHandle);
   }
 
   /* end program */

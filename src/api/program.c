@@ -40,9 +40,6 @@ static void f_poll_event(WrenVM* vm)
   int mx, my, wx, wy;
   SDL_Event e;
 
-  wrenEnsureSlots(vm, 2);
-  wrenSetSlotNewList(vm, 0);
-
 top:
   if (!SDL_PollEvent(&e))
   {
@@ -50,122 +47,122 @@ top:
     return;
   }
 
+  wrenEnsureSlots(vm, 2);
+  wrenSetSlotNewList(vm, 0);
+
   switch (e.type)
   {
     case SDL_QUIT:
       wrenSetSlotBytes(vm, 1, "quit", sizeof "quit");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
     case SDL_WINDOWEVENT:
       if (e.window.event == SDL_WINDOWEVENT_RESIZED)
       {
         wrenSetSlotBytes(vm, 1, "resized", sizeof "resized");
-        wrenSetListElement(vm, 0, 0, 1);
+        wrenInsertInList(vm, 0, -1, 1);
         wrenSetSlotDouble(vm, 1, e.window.data1);
-        wrenSetListElement(vm, 0, 1, 1);
+        wrenInsertInList(vm, 0, -1, 1);
         wrenSetSlotDouble(vm, 1, e.window.data2);
-        wrenSetListElement(vm, 0, 2, 1);
+        wrenInsertInList(vm, 0, -1, 1);
         return;
       }
       else if (e.window.event == SDL_WINDOWEVENT_EXPOSED)
       {
         rencache_invalidate();
         wrenSetSlotBytes(vm, 1, "exposed", sizeof "exposed");
-        wrenSetListElement(vm, 0, 0, 1);
+        wrenInsertInList(vm, 0, -1, 1);
         return;
       }
 
       /* on some systems, when alt-tabbing to the window SDL will queue up
       ** several KEYDOWN events for the `tab` key; we flush all keydown
       ** events on focus so these are discarded */
-      if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-        SDL_FlushEvent(SDL_KEYDOWN);
+      if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) SDL_FlushEvent(SDL_KEYDOWN);
       goto top;
 
     case SDL_DROPFILE:
       SDL_GetGlobalMouseState(&mx, &my);
       SDL_GetWindowPosition(window, &wx, &wy);
       wrenSetSlotBytes(vm, 1, "filedropped", sizeof "filedropped");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, e.drop.file);
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, mx-wx);
-      wrenSetListElement(vm, 0, 2, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, my-wy);
-      wrenSetListElement(vm, 0, 3, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_KEYDOWN:
       wrenSetSlotBytes(vm, 1, "keypressed", sizeof "keypressed");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, key_name(buf, e.key.keysym.sym));
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_KEYUP:
       wrenSetSlotBytes(vm, 1, "keyreleased", sizeof "keyreleased");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, key_name(buf, e.key.keysym.sym));
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_TEXTINPUT:
       wrenSetSlotBytes(vm, 1, "textinput", sizeof "textinput");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, e.text.text);
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_MOUSEBUTTONDOWN:
-      if (e.button.button == 1) { SDL_CaptureMouse(1); }
+      if (e.button.button == 1) { SDL_CaptureMouse(true); }
       wrenSetSlotBytes(vm, 1, "mousepressed", sizeof "mousepressed");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, button_name(e.button.button));
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.button.x);
-      wrenSetListElement(vm, 0, 2, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.button.y);
-      wrenSetListElement(vm, 0, 3, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.button.clicks);
-      wrenSetListElement(vm, 0, 4, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_MOUSEBUTTONUP:
-      if (e.button.button == 1) { SDL_CaptureMouse(0); }
+      if (e.button.button == 1) { SDL_CaptureMouse(false); }
       wrenSetSlotBytes(vm, 1, "mousereleased", sizeof "mousereleased");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, button_name(e.button.button));
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.button.x);
-      wrenSetListElement(vm, 0, 2, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.button.y);
-      wrenSetListElement(vm, 0, 3, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_MOUSEMOTION:
       wrenSetSlotBytes(vm, 1, "mousemoved", sizeof "mousemoved");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.motion.x);
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.motion.y);
-      wrenSetListElement(vm, 0, 2, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.motion.xrel);
-      wrenSetListElement(vm, 0, 3, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.motion.yrel);
-      wrenSetListElement(vm, 0, 4, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_MOUSEWHEEL:
       wrenSetSlotBytes(vm, 1, "mousewheel", sizeof "mousewheel");
-      wrenSetListElement(vm, 0, 0, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.wheel.y);
-      wrenSetListElement(vm, 0, 1, 1);
+      wrenInsertInList(vm, 0, -1, 1);
       return;
 
     default: goto top;
   }
-
-  wrenSetSlotNull(vm, 0);
 }
 
 static void f_wait_event(WrenVM* vm)

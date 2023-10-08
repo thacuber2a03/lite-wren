@@ -37,16 +37,16 @@ static void f_show_debug(WrenVM* vm)
 
 static void f_get_size(WrenVM* vm)
 {
-  int w, h;
+  int w = 0, h = 0;
   ren_get_size(&w, &h);
 
   wrenEnsureSlots(vm, 2);
   wrenSetSlotNewList(vm, 0);
-
+  
   wrenSetSlotDouble(vm, 1, w);
-  wrenSetListElement(vm, 0, 0, 1);
+  wrenInsertInList(vm, 0, -1, 1);
   wrenSetSlotDouble(vm, 1, h);
-  wrenSetListElement(vm, 0, 1, 1);
+  wrenInsertInList(vm, 0, -1, 1);
 }
 
 static void f_begin_frame(WrenVM* vm)
