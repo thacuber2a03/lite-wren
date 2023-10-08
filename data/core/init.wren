@@ -7,11 +7,9 @@ class Core {
 	}
 
 	static quit(force) {
-		Program.exit(0)
-	}
-
-	static quit() {
-
+		if (force) {
+			Program.exit(0)
+		}
 	}
 
 	static try(args, fn) {
@@ -26,7 +24,7 @@ class Core {
 		var did_keymap = false
 
 		var type = event[0]
-		if (type == "quit") core.quit()
+		if (type == "quit") core.quit(true)
 	}
 
 	static step() {
