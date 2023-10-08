@@ -83,7 +83,7 @@ static void error_func(WrenVM* vm, WrenErrorType type,
   }
 }
 
-#define DATA_FOLDER   ("data" PATHSEP)
+#define DATA_FOLDER   "data"
 #define INIT_FILENAME "init.wren"
 
 static const char* preludeModuleName = "prelude";
@@ -129,25 +129,8 @@ class Program {                                  \n\
 }                                                \n\
 ";
 
-static char* import_fullpath = NULL;
-
-static const char* resolve_func(WrenVM* vm, const char* importer, const char* name)
-{
-  int totalLen = (strlen(DATA_FOLDER) + strlen(name) + 1) * sizeof *import_fullpath;
-  import_fullpath = malloc(totalLen);
-  strcpy(import_fullpath, DATA_FOLDER);
-  strcat(import_fullpath, name);
-  import_fullpath[totalLen-1] = '\0';
-  return import_fullpath; // freed in import_complete
-}
-
 static void import_complete(WrenVM* vm, const char* name, WrenLoadModuleResult res)
 {
-  if (import_fullpath)
-  {
-    free(import_fullpath);
-    import_fullpath = NULL;
-  }
   if (res.source && res.source != prelude) free((char*) res.source);
 }
 
@@ -161,21 +144,22 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
     return res;
   }
 
-  int len = strlen(name)+2;
-  char* path = malloc(len);
+  char* path;
+  int len = (sizeof(DATA_FOLDER) + 1 + strlen(name) + 1 + 1) * sizeof *path;
+  path = malloc(len);
   check_alloc(path);
-  strcpy(path, name);
 
-  /* convert to folder name */
-  path[len-2] = *PATHSEP;
-  path[len-1] = '\0';
+  /* convert "name" to folder relative to "data/" */
+  sprintf(path, "%s%s%s%s", DATA_FOLDER, PATHSEP, name, PATHSEP);
+  printf("path: %s, len: %i (%i)", path, len, (int)strlen(path));
+
   struct stat s;
   if (stat(path, &s) < 0) return res;
 
   if (S_ISDIR(s.st_mode))
   {
     /* open it's init.wren file */
-    len += sizeof(INIT_FILENAME)+1;
+    len += sizeof(INIT_FILENAME);
     path = realloc(path, len);
     check_alloc(path);
     strcat(path, INIT_FILENAME);
@@ -296,7 +280,6 @@ int main(int argc, char **argv) {
   wrenInitConfiguration(&config);
   config.writeFn = &write_func;
   config.errorFn = &error_func;
-  config.resolveModuleFn = &resolve_func;
   config.loadModuleFn = &import_func;
   config.bindForeignMethodFn = &foreign_method;
   config.bindForeignClassFn = &foreign_class;

@@ -5,5 +5,11 @@ class Core {
 	}
 
 	static run() {
+		Program.wait_event()
+		System.print(Program.poll_event())
+	}
+
+	static on_error(err) {
+		
 	}
 }

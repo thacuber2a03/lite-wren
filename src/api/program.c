@@ -466,8 +466,9 @@ APIRegistry program_api[] = {
 
 WrenForeignMethodFn program_foreign_method(WrenVM* vm, bool isStatic, const char* signature)
 {
-  APIRegistry* api = program_api;
-  while (api->name != NULL) {
+  for (int i = 0; program_api[i]; i++)
+  {
+    APIRegistry* api = program_api + i;
     if (!strncmp(signature, api->name, strlen(api->name)))
       return api->func;
   }
