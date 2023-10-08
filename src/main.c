@@ -151,7 +151,6 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
 
   /* convert "name" to folder relative to "data/" */
   sprintf(path, "%s%s%s%s", DATA_FOLDER, PATHSEP, name, PATHSEP);
-  printf("path: %s, len: %i (%i)", path, len, (int)strlen(path));
 
   struct stat s;
   if (stat(path, &s) < 0) return res;
