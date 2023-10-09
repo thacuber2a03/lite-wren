@@ -1,3 +1,23 @@
+class Vector {
+	construct new(x, y) {
+		_x = x
+		_y = y
+	}
+
+	construct new() {
+		_x = 0
+		_y = 0
+	}
+
+	x { _x }
+	y { _y }
+
+	x=(v) { _x=v }
+	y=(v) { _y=v }
+
+	asList { [x, y] }
+}
+
 class Rect {
 	construct new(x, y, w, h) {
 		_x = x
@@ -17,19 +37,4 @@ class Rect {
 	height=(v) { _h=v }
 
 	asList { [x, y, width, height] }
-}
-
-class Point {
-	construct new(x, y) {
-		_x = x
-		_y = y
-	}
-
-	x { _x }
-	y { _y }
-
-	x=(v) { _x=v }
-	y=(v) { _y=v }
-
-	asList { [x, y] }
 }

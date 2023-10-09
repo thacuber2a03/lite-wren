@@ -83,25 +83,6 @@ static void error_func(WrenVM* vm, WrenErrorType type,
 #define DATA_FOLDER   "data"
 #define INIT_FILENAME "init.wren"
 
-static const char* preludeModuleName = "prelude";
-static const char* prelude = "\
-import \"core\" for Core                            \n\
-\n\
-class Prelude {                                     \n\
-  foreign static ARGS                               \n\
-  static VERSION { \"" VERSION "\" }                \n\
-  static PATHSEP { \"" PATHSEP "\" }                \n\
-  foreign static PLATFORM                           \n\
-  foreign static SCALE                              \n\
-  foreign static EXEFILE                            \n\
-                                                    \n\
-  static start() {                                  \n\
-    Core.init()                                     \n\
-    Core.run()                                      \n\
-  }                                                 \n\
-}                                                   \n\
-";
-
 static const char* apiModuleName = "api";
 static const char* api = "\
 class Program {                                     \n\
@@ -124,6 +105,25 @@ class Program {                                     \n\
   foreign static fuzzy_match(str, pattern)          \n\
   foreign static exit(code)                         \n\
   static exit() { exit(0) }                         \n\
+                                                    \n\
+  foreign static ARGS                               \n\
+  static VERSION { \"" VERSION "\" }                \n\
+  static PATHSEP { \"" PATHSEP "\" }                \n\
+  foreign static PLATFORM                           \n\
+  foreign static SCALE                              \n\
+  foreign static EXEFILE                            \n\
+  static EXEDIR {                                   \n\
+    if (__exedir) return __exedir                   \n\
+    var exefile = Program.EXEFILE                   \n\
+    for (i in (exefile.count-1)..0) {               \n\
+      if (exefile[i] == Program.PATHSEP) {          \n\
+        __exedir = exefile[0...i]                   \n\
+        return __exedir                             \n\
+      }                                             \n\
+    }                                               \n\
+    __exedir = \".\"                                \n\
+    return __exedir                                 \n\
+  }                                                 \n\
 }                                                   \n\
 \n\
 class Renderer {                                    \n\
@@ -140,19 +140,13 @@ class Renderer {                                    \n\
 
 static void import_complete(WrenVM* vm, const char* name, WrenLoadModuleResult res)
 {
-  if (res.source && res.source != prelude && res.source != api)
+  if (res.source && res.source != api)
     free((char*) res.source);
 }
 
 static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
 {
   WrenLoadModuleResult res = { NULL, import_complete, NULL };
-
-  if (!strcmp(name, preludeModuleName))
-  {
-    res.source = prelude;
-    return res;
-  }
 
   if (!strcmp(name, apiModuleName))
   {
@@ -229,21 +223,18 @@ static WrenForeignMethodFn foreign_method(WrenVM* vm,
   const char* module, const char* className, bool isStatic,
   const char* signature)
 {
-  if (!strcmp(module, preludeModuleName))
+  if (!strcmp(module, apiModuleName))
   {
-    if (!strcmp(className, "Prelude"))
+    if (!strcmp(className, "Program"))
     {
-      if      (!strcmp(signature, "ARGS"    )) return PROPREF(ARGS);
-      else if (!strcmp(signature, "PLATFORM")) return PROPREF(PLATFORM);
-      else if (!strcmp(signature, "SCALE"   )) return PROPREF(SCALE);
-      else if (!strcmp(signature, "EXEFILE" )) return PROPREF(EXEFILE);
+      if (!strcmp(signature, "ARGS"    )) return PROPREF(ARGS);
+      if (!strcmp(signature, "PLATFORM")) return PROPREF(PLATFORM);
+      if (!strcmp(signature, "SCALE"   )) return PROPREF(SCALE);
+      if (!strcmp(signature, "EXEFILE" )) return PROPREF(EXEFILE);
+      /* fallthrough */
     }
-  }
-  else if (!strcmp(module, apiModuleName))
-  {
     return api_foreign_method(vm, className, isStatic, signature);
   }
-
   return NULL;
 }
 
@@ -331,18 +322,11 @@ int main(int argc, char **argv) {
   SCALE = wrenGetSlotHandle(vm, 0);
 
   /* compile prelude */
-  wrenInterpret(vm, apiModuleName, api);
-  WrenInterpretResult res = wrenInterpret(vm, preludeModuleName, prelude);
-
-  WrenHandle* preludeStartHandle;
-  if (res == WREN_RESULT_SUCCESS)
-  {
-    wrenEnsureSlots(vm, 1);
-    wrenGetVariable(vm, preludeModuleName, "Prelude", 0);
-    preludeStartHandle = wrenMakeCallHandle(vm, "start()");
-    wrenCall(vm, preludeStartHandle);
-    wrenReleaseHandle(vm, preludeStartHandle);
-  }
+  wrenInterpret(vm, "prelude",
+    "import \"core\" for Core\n"
+    "Core.init()\n"
+    "Core.run()\n"
+  );
 
   /* end program */
   wrenReleaseHandle(vm, ARGS);

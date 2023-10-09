@@ -40,12 +40,10 @@ static void f_poll_event(WrenVM* vm)
   int mx, my, wx, wy;
   SDL_Event e;
 
+  wrenSetSlotNull(vm, 0);
+
 top:
-  if (!SDL_PollEvent(&e))
-  {
-    wrenSetSlotNull(vm, 0);
-    return;
-  }
+  if (!SDL_PollEvent(&e)) return;
 
   wrenEnsureSlots(vm, 2);
   wrenSetSlotNewList(vm, 0);
@@ -53,13 +51,14 @@ top:
   switch (e.type)
   {
     case SDL_QUIT:
-      wrenSetSlotBytes(vm, 1, "quit", sizeof "quit");
+      wrenSetSlotString(vm, 1, "quit");
       wrenInsertInList(vm, 0, -1, 1);
       return;
+
     case SDL_WINDOWEVENT:
       if (e.window.event == SDL_WINDOWEVENT_RESIZED)
       {
-        wrenSetSlotBytes(vm, 1, "resized", sizeof "resized");
+        wrenSetSlotString(vm, 1, "resized");
         wrenInsertInList(vm, 0, -1, 1);
         wrenSetSlotDouble(vm, 1, e.window.data1);
         wrenInsertInList(vm, 0, -1, 1);
@@ -70,21 +69,19 @@ top:
       else if (e.window.event == SDL_WINDOWEVENT_EXPOSED)
       {
         rencache_invalidate();
-        wrenSetSlotBytes(vm, 1, "exposed", sizeof "exposed");
+        wrenSetSlotString(vm, 1, "exposed");
         wrenInsertInList(vm, 0, -1, 1);
         return;
       }
 
-      /* on some systems, when alt-tabbing to the window SDL will queue up
-      ** several KEYDOWN events for the `tab` key; we flush all keydown
-      ** events on focus so these are discarded */
       if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) SDL_FlushEvent(SDL_KEYDOWN);
+      wrenSetSlotNull(vm, 0);
       goto top;
 
     case SDL_DROPFILE:
       SDL_GetGlobalMouseState(&mx, &my);
       SDL_GetWindowPosition(window, &wx, &wy);
-      wrenSetSlotBytes(vm, 1, "filedropped", sizeof "filedropped");
+      wrenSetSlotString(vm, 1, "filedropped");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, e.drop.file);
       wrenInsertInList(vm, 0, -1, 1);
@@ -95,21 +92,21 @@ top:
       return;
 
     case SDL_KEYDOWN:
-      wrenSetSlotBytes(vm, 1, "keypressed", sizeof "keypressed");
+      wrenSetSlotString(vm, 1, "keypressed");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, key_name(buf, e.key.keysym.sym));
       wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_KEYUP:
-      wrenSetSlotBytes(vm, 1, "keyreleased", sizeof "keyreleased");
+      wrenSetSlotString(vm, 1, "keyreleased");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, key_name(buf, e.key.keysym.sym));
       wrenInsertInList(vm, 0, -1, 1);
       return;
 
     case SDL_TEXTINPUT:
-      wrenSetSlotBytes(vm, 1, "textinput", sizeof "textinput");
+      wrenSetSlotString(vm, 1, "textinput");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, e.text.text);
       wrenInsertInList(vm, 0, -1, 1);
@@ -117,7 +114,7 @@ top:
 
     case SDL_MOUSEBUTTONDOWN:
       if (e.button.button == 1) { SDL_CaptureMouse(true); }
-      wrenSetSlotBytes(vm, 1, "mousepressed", sizeof "mousepressed");
+      wrenSetSlotString(vm, 1, "mousepressed");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, button_name(e.button.button));
       wrenInsertInList(vm, 0, -1, 1);
@@ -131,7 +128,7 @@ top:
 
     case SDL_MOUSEBUTTONUP:
       if (e.button.button == 1) { SDL_CaptureMouse(false); }
-      wrenSetSlotBytes(vm, 1, "mousereleased", sizeof "mousereleased");
+      wrenSetSlotString(vm, 1, "mousereleased");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotString(vm, 1, button_name(e.button.button));
       wrenInsertInList(vm, 0, -1, 1);
@@ -142,7 +139,7 @@ top:
       return;
 
     case SDL_MOUSEMOTION:
-      wrenSetSlotBytes(vm, 1, "mousemoved", sizeof "mousemoved");
+      wrenSetSlotString(vm, 1, "mousemoved");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.motion.x);
       wrenInsertInList(vm, 0, -1, 1);
@@ -155,7 +152,7 @@ top:
       return;
 
     case SDL_MOUSEWHEEL:
-      wrenSetSlotBytes(vm, 1, "mousewheel", sizeof "mousewheel");
+      wrenSetSlotString(vm, 1, "mousewheel");
       wrenInsertInList(vm, 0, -1, 1);
       wrenSetSlotDouble(vm, 1, e.wheel.y);
       wrenInsertInList(vm, 0, -1, 1);
@@ -341,21 +338,21 @@ static void f_get_file_info(WrenVM* vm)
   wrenSetSlotNewMap(vm, 0);
 
   wrenSetSlotDouble(vm, 1, s.st_mtime);
-  wrenSetSlotBytes(vm, 2, "modified", sizeof "modified");
+  wrenSetSlotString(vm, 2, "modified");
   wrenSetMapValue(vm, 0, 2, 1);
 
   wrenSetSlotDouble(vm, 1, s.st_size);
-  wrenSetSlotBytes(vm, 2, "size", sizeof "size");
+  wrenSetSlotString(vm, 2, "size");
   wrenSetMapValue(vm, 0, 2, 1);
 
   if (S_ISREG(s.st_mode))
-    wrenSetSlotBytes(vm, 1, "file", sizeof "file");
+    wrenSetSlotString(vm, 1, "file");
   else if (S_ISDIR(s.st_mode))
-    wrenSetSlotBytes(vm, 1, "dir", sizeof "dir");
+    wrenSetSlotString(vm, 1, "dir");
   else
     wrenSetSlotNull(vm, 1);
 
-  wrenSetSlotBytes(vm, 2, "type", sizeof "type");
+  wrenSetSlotString(vm, 2, "type");
   wrenSetMapValue(vm, 0, 2, 1);
 }
 

@@ -2,29 +2,77 @@ import "api" for Program, Renderer
 import "core/config" for Config
 import "core/shapes" for Rect
 
+import "core/rootview" for RootView
+
 class Core {
+	static redraw { __redraw }
+	static redraw=(v) { __redraw = v }
+
+	static root_view { __root_view }
+
 	static init() {
+		var project_dir = Program.EXEDIR
+		var files = []
+		if (Program.ARGS.count > 1) {
+			for (i in 1...Program.ARGS.count) {
+				var info = Program.get_file_info(Program.ARGS[i]) || {}
+
+				if (info.contains("type")) {
+					if (info["type"] == "file") {
+						files.add(Program.absolute_path(Program.ARGS[i]))
+					} else if (info["type"] == "dir") {
+						project_dir = Program.ARGS[i]
+					}
+				}
+			}
+		}
+
+		Program.chdir(project_dir)
+
+		__frame_start = 0
+		__clip_rect_stack = [ Rect.new(0, 0, 0, 0) ]
+		__log_items = []
+		__docs = []
+		__threads = []
+		__project_files = []
+		__redraw = true
+
+		__root_view = RootView.new()
+		set_active_view(__root_view)
 	}
 
 	static quit(force) {
 		if (force) {
-			Program.exit(0)
+			Program.exit()
+		}
+		return Core.quit(true)
+	}
+
+	static quit() { Core.quit(false) }
+
+	static set_active_view(view) {
+		if (view == null) Fiber.abort("Tried to set active view to nil")
+		if (view != __active_view) {
+			__last_active_view = __active_view
+			__active_view = view
 		}
 	}
 
 	static try(args, fn) {
-		var f = Fiber.new { fn.call() }
-		var res = f.try()
+		// TODO(thacuber2a03): ...isn't this redundant?
+		var f = Fiber.new { |a| fn.call(a) }
+		var res = f.call(args)
 		if (f.error) return [false, f.error]
 		return [true, res]
 	}
 
 	static on_event(event) {
-		System.print(event)
-		var did_keymap = false
+		if (event && event.count > 0) {
+			var did_keymap = false
 
-		var type = event[0]
-		if (type == "quit") core.quit(true)
+			var type = event[0]
+			if (type == "quit") Core.quit(true)
+		}
 	}
 
 	static step() {
@@ -33,8 +81,7 @@ class Core {
 		var mouse = [0, 0, 0, 0]
 
 		var event = Program.poll_event()
-		while (event)
-		{
+		while (event) {
 			if (event == "mousemoved") {
 				mouse_moved = true
 				mouse[0] = event[1]
@@ -44,35 +91,38 @@ class Core {
 			} else if (type == "textinput" && did_keymap) {
 				did_keymap = false
 			} else {
-				var r = Core.try(Fn.new { |a| Core.on_event(a) }, event)
+				var r = Core.try(event) { |a| Core.on_event(a) }
 				var res = r[1] || did_keymap
 			}
 			event = Program.poll_event()
 		}
-		Core.redraw = true
+		__redraw = true
 
 		if (mouse_moved) {
 			Core.try(
-				Fn.new { |a| Core.on_event(a) },
 				["mousemoved", mouse[0], mouse[1], mouse[2], mouse[3]]
-			)
+			) { |a| Core.on_event(a) }
 		}
 
 		var size = Renderer.get_size()
 
-		if (!Core.redraw) return false
-		Core.redraw = false
+		__root_view.size.x = size[0]
+		__root_view.size.y = size[1]
+		__root_view.update()
+		if (!__redraw) return false
+		__redraw = false
 
-		var title = "lite"
+		var name = __active_view.get_name()
+		var title = name != "---" ? name + " - lite" : "lite"
 		if (title != __window_title) {
 			Program.set_window_title(title)
 			__window_title = title
 		}
 
 		Renderer.begin_frame()
-		if (!__clip_rect_stack) __clip_rect_stack = []
-		__clip_rect_stack.add(Rect.new(0, 0, size[0], size[1]))
+		__clip_rect_stack[0] = Rect.new(0, 0, size[0], size[1])
 		Renderer.set_clip_rect(__clip_rect_stack[0].asList)
+		__root_view.draw()
 		Renderer.end_frame()
 		return true
 	}
@@ -86,12 +136,5 @@ class Core {
 			Program.sleep(0.max(1/Config.fps - elapsed))
 		}
 	}
-
-	redraw {
-		if (!__redraw) __redraw = false
-		return __redraw
-	}
-
-	redraw=(v) { __redraw = v }
 }
 
