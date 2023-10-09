@@ -16,9 +16,9 @@ class Common {
 		return col
 	}
 
-	// marvel of technology
 	static assert(cond, err) {
 		if (!cond) Fiber.abort(err)
+		return cond
 	}
 }
 

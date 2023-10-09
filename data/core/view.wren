@@ -59,18 +59,20 @@ class View {
     return x >= s.x - s.width * 3 && x < s.x + s.width && y >= s.y && y < sy + s.height
   }
 
-  on_mouse_pressed(button, x, y, clicks) {
+  on_mouse_pressed(event) {
+    var x = event[1]
+    var y = event[2]
     if (scrollbar_overlaps_point(x, y)) {
       _dragging_scrollbar = true
       return true
     }
   }
 
-  on_mouse_released(button, x, y) {
+  on_mouse_released(event) {
     _dragging_scrollbar = false
   }
 
-  on_mouse_moved(x, y, dx, dy) {
+  on_mouse_moved(event) {
     if (_dragging_scrollbar) {
       var delta = get_scrollable_size() / _size.y * dy
       _scroll[1].y = _scroll[1].y + delta
