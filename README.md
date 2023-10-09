@@ -1,5 +1,5 @@
 # lite-wren
-A rewrite of lite that makes it use [Wren](https://github.com/wren-lang/wren) as it's scripting language.
+A rewrite of lite that makes it use [Wren](https://github.com/wren-lang/wren) instead of Lua as it's scripting language.
 it doesn't try to stand up to any of the goals the original lite had, it's more of an hobby project for me.
 
 Original README:
