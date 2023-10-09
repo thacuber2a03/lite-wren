@@ -16,6 +16,18 @@ class Vector {
 	y=(v) { _y=v }
 
 	asList { [x, y] }
+
+	[prop] {
+		if (prop == "x") return _x
+		if (prop == "y") return _y
+		Fiber.abort("invalid property access %(prop)")
+	}
+
+	[prop]=(value) {
+		if (prop == "x") _x = value
+		if (prop == "y") _y = value
+		Fiber.abort("invalid property assign %(prop)")
+	}
 }
 
 class Rect {

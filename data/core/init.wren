@@ -3,12 +3,15 @@ import "core/config" for Config
 import "core/common" for Common
 import "core/shapes" for Rect
 import "core/rootview" for RootView
+import "core/statusview" for StatusView
 
 class Core {
 	static redraw { __redraw }
 	static redraw=(v) { __redraw = v }
 
 	static root_view { __root_view }
+	static last_active_view { __last_active_view }
+	static active_view { __active_view }
 
 	static init() {
 		var project_dir = Program.EXEDIR
@@ -38,8 +41,9 @@ class Core {
 		__redraw = true
 
 		__root_view = RootView.new()
-		// until I find where the hell is __active_view actually set
-		set_active_view(__root_view)
+		__status_view = StatusView.new()
+
+		__root_view.root_node.split("down", __status_view, true)
 	}
 
 	static quit(force) {
@@ -70,6 +74,7 @@ class Core {
 		if (event && event.count > 0) {
 			var did_keymap = false
 
+			// TODO(thacuber2a03): add other events and do more than pass the event directly
 			var type = event[0]
 			if (type == "quit") Core.quit(true)
 		}
