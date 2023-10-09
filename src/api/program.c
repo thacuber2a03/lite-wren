@@ -164,22 +164,8 @@ top:
 
 static void f_wait_event(WrenVM* vm)
 {
-  int n = wrenGetSlotDouble(vm, 1);
+  int n = checkdouble(vm, 1);
   wrenSetSlotBool(vm, 0, SDL_WaitEventTimeout(NULL, n * 1000));
-}
-
-static void throwerror(WrenVM* vm, const char* fmt, ...)
-{
-  wrenEnsureSlots(vm, 1);
-  char error[2048];
-
-  va_list arg;
-  va_start(arg, fmt);
-  vsprintf(error, fmt, arg);
-  va_end(arg);
-
-  wrenSetSlotString(vm, 0, error);
-  wrenAbortFiber(vm, 0);
 }
 
 static int checkoption(WrenVM* vm, int slot, const char* def, const char* list[])
@@ -253,8 +239,8 @@ static void f_window_has_focus(WrenVM* vm)
 
 static void f_show_confirm_dialog(WrenVM* vm)
 {
-  const char* title = wrenGetSlotString(vm, 1);
-  const char* msg = wrenGetSlotString(vm, 1);
+  const char* title = checkstring(vm, 1);
+  const char* msg = checkstring(vm, 1);
 
 #if _WIN32
   int id = MessageBox(0, msg, title, MB_YESNO | MB_ICONWARNING);
@@ -286,7 +272,7 @@ static void f_chdir(WrenVM* vm)
 
 static void f_list_dir(WrenVM* vm)
 {
-  const char* path = wrenGetSlotString(vm, 1);
+  const char* path = checkstring(vm, 1);
 
   DIR* dir = opendir(path);
   if (!dir)
@@ -315,7 +301,7 @@ static void f_list_dir(WrenVM* vm)
 #endif
 
 static void f_absolute_path(WrenVM* vm) {
-  const char *path = wrenGetSlotString(vm, 1);
+  const char *path = checkstring(vm, 1);
   char *res = realpath(path, NULL);
   if (!res) return;
   wrenSetSlotString(vm, 0, res);
@@ -324,7 +310,7 @@ static void f_absolute_path(WrenVM* vm) {
 
 static void f_get_file_info(WrenVM* vm)
 {
-  const char* path = wrenGetSlotString(vm, 0);
+  const char* path = checkstring(vm, 0);
 
   struct stat s;
   int err = stat(path, &s);
@@ -366,7 +352,7 @@ static void f_get_clipboard(WrenVM* vm)
 
 static void f_set_clipboard(WrenVM* vm)
 {
-  const char* text = wrenGetSlotString(vm, 1);
+  const char* text = checkstring(vm, 1);
   SDL_SetClipboardText(text);
   wrenSetSlotNull(vm, 0);
 }
@@ -379,14 +365,14 @@ static void f_get_time(WrenVM* vm)
 
 static void f_sleep(WrenVM* vm)
 {
-  double n = wrenGetSlotDouble(vm, 0);
+  double n = checkdouble(vm, 1);
   SDL_Delay(n * 1000);
   wrenSetSlotNull(vm, 0);
 }
 
 static void f_exec(WrenVM* vm)
 {
-  const char* cmd = wrenGetSlotString(vm, 1);
+  const char* cmd = checkstring(vm, 1);
   char* buf = malloc(strlen(cmd) + 32);
   if (!buf)
   {
@@ -405,8 +391,8 @@ static void f_exec(WrenVM* vm)
 
 static void f_fuzzy_match(WrenVM* vm)
 {
-  const char* str = wrenGetSlotString(vm, 1);
-  const char* ptn = wrenGetSlotString(vm, 2);
+  const char* str = checkstring(vm, 1);
+  const char* ptn = checkstring(vm, 2);
   int score = 0;
   int run = 0;
 
@@ -437,7 +423,7 @@ static void f_fuzzy_match(WrenVM* vm)
   wrenSetSlotDouble(vm, 0, score - (int) strlen(str));
 }
 
-static void f_exit(WrenVM* vm) { exit(wrenGetSlotDouble(vm, 1)); }
+static void f_exit(WrenVM* vm) { exit(checkdouble(vm, 1)); }
 
 APIRegistry program_api[] = {
   { "poll_event()",             f_poll_event          },

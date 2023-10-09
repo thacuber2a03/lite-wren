@@ -61,3 +61,24 @@ int luaopen_renderer_font(lua_State *L) {
   return 1;
 }
 */
+
+void font_allocate(WrenVM* vm)
+{
+	const char* filename = wrenGetSlotString(vm, 1);
+	float size = wrenGetSlotDouble(vm, 2);
+	wrenSetSlotNewForeign(vm, 0, 0, sizeof(RenFont*));
+	RenFont** self = wrenGetSlotForeign(vm, 0);
+	*self = ren_load_font(filename, size);
+}
+
+void font_finalize(void* data)
+{
+}
+
+WrenForeignClassMethods font_foreign_class(WrenVM* vm)
+{
+	return (WrenForeignClassMethods) {
+		.allocate = font_allocate,
+		.finalize = font_finalize,
+	};
+}

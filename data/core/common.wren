@@ -15,4 +15,10 @@ class Common {
 		col.add(0xff)
 		return col
 	}
+
+	// marvel of technology
+	static assert(cond, err) {
+		if (!cond) Fiber.abort(err)
+	}
 }
+

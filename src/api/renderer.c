@@ -13,16 +13,16 @@ static RenColor checkcolor(WrenVM* vm, int idx, int def)
   wrenEnsureSlots(vm, idx+1);
 
   wrenGetListElement(vm, idx, 0, idx+1);
-  color.r = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+  color.r = (uint8_t)checkdouble(vm, idx+1);
   wrenGetListElement(vm, idx, 1, idx+1);
-  color.g = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+  color.g = (uint8_t)checkdouble(vm, idx+1);
   wrenGetListElement(vm, idx, 2, idx+1);
-  color.b = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+  color.b = (uint8_t)checkdouble(vm, idx+1);
 
   if (wrenGetListCount(vm, idx) >= 4)
   {
     wrenGetListElement(vm, idx, 0, idx+1);
-    color.a = (uint8_t)wrenGetSlotDouble(vm, idx+1);
+    color.a = (uint8_t)checkdouble(vm, idx+1);
   }
   else color.a = 255;
 
@@ -31,6 +31,7 @@ static RenColor checkcolor(WrenVM* vm, int idx, int def)
 
 static void f_show_debug(WrenVM* vm)
 {
+  // it can be anything as long as it's truthy
   rencache_show_debug(wrenGetSlotBool(vm, 1));
   wrenSetSlotNull(vm, 0);
 }
@@ -64,10 +65,10 @@ static void f_end_frame(WrenVM* vm)
 static void f_set_clip_rect(WrenVM* vm)
 {
   RenRect rect;
-  rect.x = wrenGetSlotDouble(vm, 1);
-  rect.y = wrenGetSlotDouble(vm, 2);
-  rect.width = wrenGetSlotDouble(vm, 3);
-  rect.height = wrenGetSlotDouble(vm, 4);
+  rect.x = checkdouble(vm, 1);
+  rect.y = checkdouble(vm, 2);
+  rect.width = checkdouble(vm, 3);
+  rect.height = checkdouble(vm, 4);
   rencache_set_clip_rect(rect);
   wrenSetSlotNull(vm, 0);
 }
@@ -77,14 +78,15 @@ static void f_set_clip_rect_list(WrenVM* vm)
   RenRect rect;
   wrenEnsureSlots(vm, 2);
 
+  checklist(vm, 1);
   wrenGetListElement(vm, 1, 0, 0);
-  rect.x = wrenGetSlotDouble(vm, 0);
+  rect.x = checkdouble(vm, 0);
   wrenGetListElement(vm, 1, 1, 0);
-  rect.y = wrenGetSlotDouble(vm, 0);
+  rect.y = checkdouble(vm, 0);
   wrenGetListElement(vm, 1, 2, 0);
-  rect.width = wrenGetSlotDouble(vm, 0);
+  rect.width = checkdouble(vm, 0);
   wrenGetListElement(vm, 1, 3, 0);
-  rect.height = wrenGetSlotDouble(vm, 0);
+  rect.height = checkdouble(vm, 0);
   rencache_set_clip_rect(rect);
 
   wrenSetSlotNull(vm, 0);
@@ -93,10 +95,10 @@ static void f_set_clip_rect_list(WrenVM* vm)
 static void f_draw_rect(WrenVM* vm)
 {
   RenRect rect;
-  rect.x = wrenGetSlotDouble(vm, 1);
-  rect.y = wrenGetSlotDouble(vm, 2);
-  rect.width = wrenGetSlotDouble(vm, 3);
-  rect.height = wrenGetSlotDouble(vm, 4);
+  rect.x = checkdouble(vm, 1);
+  rect.y = checkdouble(vm, 2);
+  rect.width = checkdouble(vm, 3);
+  rect.height = checkdouble(vm, 4);
   RenColor color = checkcolor(vm, 5, 255);
   rencache_draw_rect(rect, color);
   wrenSetSlotNull(vm, 0);
@@ -104,10 +106,10 @@ static void f_draw_rect(WrenVM* vm)
 
 static void f_draw_text(WrenVM* vm)
 {
-  RenFont** font = wrenGetSlotForeign(vm, 1);
-  const char* text = wrenGetSlotString(vm, 2);
-  int x = wrenGetSlotDouble(vm, 3);
-  int y = wrenGetSlotDouble(vm, 4);
+  RenFont** font = checkforeign(vm, 1);
+  const char* text = checkstring(vm, 2);
+  int x = checkdouble(vm, 3);
+  int y = checkdouble(vm, 4);
   RenColor color = checkcolor(vm, 5, 255);
   x = rencache_draw_text(*font, text, x, y, color);
   wrenSetSlotDouble(vm, 0, x);

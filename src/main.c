@@ -136,6 +136,10 @@ class Renderer {                                    \n\
   foreign static draw_rect(x, y, w, h, color)       \n\
   foreign static draw_text(font, text, x, y, color) \n\
 }                                                   \n\
+\n\
+foreign class Font {                                \n\
+                                                    \n\
+}                                                   \n\
 ";
 
 static void import_complete(WrenVM* vm, const char* name, WrenLoadModuleResult res)
@@ -204,6 +208,7 @@ static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)
 
 static WrenForeignClassMethods foreign_class(WrenVM* vm, const char* module, const char* className)
 {
+  if (strcmp(module, apiModuleName)) return (WrenForeignClassMethods) {0};
   return api_foreign_class(vm, className);
 }
 

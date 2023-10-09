@@ -1,7 +1,7 @@
 import "api" for Program, Renderer
 import "core/config" for Config
+import "core/common" for Common
 import "core/shapes" for Rect
-
 import "core/rootview" for RootView
 
 class Core {
@@ -51,7 +51,7 @@ class Core {
 	static quit() { Core.quit(false) }
 
 	static set_active_view(view) {
-		if (view == null) Fiber.abort("Tried to set active view to nil")
+		Common.assert(view, "Tried to set active view to null")
 		if (view != __active_view) {
 			__last_active_view = __active_view
 			__active_view = view
@@ -59,9 +59,8 @@ class Core {
 	}
 
 	static try(args, fn) {
-		// TODO(thacuber2a03): ...isn't this redundant?
-		var f = Fiber.new { |a| fn.call(a) }
-		var res = f.call(args)
+		var f = Fiber.new(fn)
+		var res = f.try(args)
 		if (f.error) return [false, f.error]
 		return [true, res]
 	}
