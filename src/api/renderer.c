@@ -127,7 +127,7 @@ APIRegistry renderer_api[] = {
   { NULL,                     NULL                 }
 };
 
-WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, bool isStatic, const char* signature)
+WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, const char* signature)
 {
   for (int i = 0; renderer_api[i].signature != NULL; i++)
   {
