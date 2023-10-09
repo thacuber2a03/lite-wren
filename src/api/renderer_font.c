@@ -69,6 +69,7 @@ void font_allocate(WrenVM* vm)
 	wrenSetSlotNewForeign(vm, 0, 0, sizeof(RenFont*));
 	RenFont** self = wrenGetSlotForeign(vm, 0);
 	*self = ren_load_font(filename, size);
+	if (!*self) throwerror(vm, "failed to load font");
 }
 
 void font_finalize(void* data)
