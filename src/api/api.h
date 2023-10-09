@@ -9,7 +9,7 @@ typedef struct {
 } APIRegistry;
 
 WrenForeignClassMethods api_foreign_class(WrenVM* vm, const char* className);
-WrenForeignMethodFn api_foreign_method(WrenVM* vm, const char* className, bool isStatic, const char* signature);
+WrenForeignMethodFn api_foreign_method(WrenVM* vm, const char* className, const char* signature);
 
 void throwerror(WrenVM* vm, const char* fmt, ...);
 bool checkbool(WrenVM* vm, int slot);

@@ -138,7 +138,10 @@ class Renderer {                                    \n\
 }                                                   \n\
 \n\
 foreign class Font {                                \n\
-                                                    \n\
+  construct load(filename, size) {}                 \n\
+  foreign set_tab_width(width)                      \n\
+  foreign get_width(text)                           \n\
+  foreign get_height()                              \n\
 }                                                   \n\
 ";
 
@@ -238,7 +241,7 @@ static WrenForeignMethodFn foreign_method(WrenVM* vm,
       if (!strcmp(signature, "EXEFILE" )) return PROPREF(EXEFILE);
       /* fallthrough */
     }
-    return api_foreign_method(vm, className, isStatic, signature);
+    return api_foreign_method(vm, className, signature);
   }
   return NULL;
 }

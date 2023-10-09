@@ -38,7 +38,7 @@ static const char* typetostring(WrenType type)
     if (got != expected) { \
       throwerror(vm, \
         "Expected argument %i to have type %s, got %s instead", \
-        slot+1, typetostring(expected), typetostring(wrenGetSlotType(vm, slot)) \
+        slot+1, typetostring(expected), typetostring(got) \
       ); \
     } \
   } while(0)
@@ -73,19 +73,22 @@ void* checkforeign(WrenVM* vm, int slot)
 
 void checkunknown(WrenVM* vm, int slot) { checktype(vm, slot, WREN_TYPE_UNKNOWN); }
 
-WrenForeignMethodFn program_foreign_method(WrenVM* vm, bool isStatic, const char* signature);
-WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, bool isStatic, const char* signature);
+WrenForeignMethodFn program_foreign_method(WrenVM* vm, const char* signature);
+WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, const char* signature);
 WrenForeignClassMethods font_foreign_class(WrenVM* vm);
+WrenForeignMethodFn font_foreign_method(WrenVM* vm, const char* signature);
 
 WrenForeignClassMethods api_foreign_class(WrenVM* vm, const char* className)
 {
+  // there's no foreign classes but this one
   if (strcmp(className, "Font")) return (WrenForeignClassMethods) {0};
   return font_foreign_class(vm);
 }
 
-WrenForeignMethodFn api_foreign_method(WrenVM* vm, const char* className, bool isStatic, const char* signature)
+WrenForeignMethodFn api_foreign_method(WrenVM* vm, const char* className, const char* signature)
 {
-  if (!strcmp(className, "Program" )) return program_foreign_method(vm, isStatic, signature);
-  if (!strcmp(className, "Renderer")) return renderer_foreign_method(vm, isStatic, signature);
+  if (!strcmp(className, "Program" )) return program_foreign_method(vm, signature);
+  if (!strcmp(className, "Renderer")) return renderer_foreign_method(vm, signature);
+  if (!strcmp(className, "Font"    )) return font_foreign_method(vm, signature);
   return NULL;
 }

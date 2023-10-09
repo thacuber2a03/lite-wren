@@ -2,84 +2,63 @@
 #include "renderer.h"
 #include "rencache.h"
 
-/*
-static int f_load(lua_State *L) {
-  const char *filename  = luaL_checkstring(L, 1);
-  float size = luaL_checknumber(L, 2);
-  RenFont **self = lua_newuserdata(L, sizeof(*self));
-  luaL_setmetatable(L, API_TYPE_FONT);
+static void font_allocate(WrenVM* vm)
+{
+  const char* filename = checkstring(vm, 1);
+  float size = checkdouble(vm, 2);
+  wrenSetSlotNewForeign(vm, 0, 0, sizeof(RenFont*));
+  RenFont** self = wrenGetSlotForeign(vm, 0);
   *self = ren_load_font(filename, size);
-  if (!*self) { luaL_error(L, "failed to load font"); }
-  return 1;
+  if (!*self) throwerror(vm, "failed to load font");
 }
 
+static void font_finalize(void* data)
+{
+  RenFont** self = (RenFont**) data;
+  if (*self) rencache_free_font(*self);
+  *self = NULL;
+}
 
-static int f_set_tab_width(lua_State *L) {
-  RenFont **self = luaL_checkudata(L, 1, API_TYPE_FONT);
-  int n = luaL_checknumber(L, 2);
+static void f_set_tab_width(WrenVM* vm) {
+  RenFont **self = (RenFont**)checkforeign(vm, 0);
+  int n = checkdouble(vm, 1);
   ren_set_font_tab_width(*self, n);
-  return 0;
+  wrenSetSlotNull(vm, 0);
 }
 
-
-static int f_gc(lua_State *L) {
-  RenFont **self = luaL_checkudata(L, 1, API_TYPE_FONT);
-  if (*self) { rencache_free_font(*self); }
-  return 0;
+static void f_get_width(WrenVM* vm) {
+  RenFont **self = checkforeign(vm, 0);
+  const char *text = checkstring(vm, 1);
+  wrenSetSlotDouble(vm, 0, ren_get_font_width(*self, text));
 }
 
-
-static int f_get_width(lua_State *L) {
-  RenFont **self = luaL_checkudata(L, 1, API_TYPE_FONT);
-  const char *text = luaL_checkstring(L, 2);
-  lua_pushnumber(L, ren_get_font_width(*self, text) );
-  return 1;
-}
-
-
-static int f_get_height(lua_State *L) {
-  RenFont **self = luaL_checkudata(L, 1, API_TYPE_FONT);
-  lua_pushnumber(L, ren_get_font_height(*self) );
-  return 1;
-}
-
-
-static const luaL_Reg lib[] = {
-  { "__gc",          f_gc            },
-  { "load",          f_load          },
-  { "set_tab_width", f_set_tab_width },
-  { "get_width",     f_get_width     },
-  { "get_height",    f_get_height    },
-  { NULL, NULL }
-};
-
-int luaopen_renderer_font(lua_State *L) {
-  luaL_newmetatable(L, API_TYPE_FONT);
-  luaL_setfuncs(L, lib, 0);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  return 1;
-}
-*/
-
-void font_allocate(WrenVM* vm)
-{
-	const char* filename = wrenGetSlotString(vm, 1);
-	float size = wrenGetSlotDouble(vm, 2);
-	wrenSetSlotNewForeign(vm, 0, 0, sizeof(RenFont*));
-	RenFont** self = wrenGetSlotForeign(vm, 0);
-	*self = ren_load_font(filename, size);
-	if (!*self) throwerror(vm, "failed to load font");
-}
-
-void font_finalize(void* data)
-{
+static void f_get_height(WrenVM* vm) {
+  RenFont **self = checkforeign(vm, 0);
+  wrenSetSlotDouble(vm, 0, ren_get_font_height(*self));
 }
 
 WrenForeignClassMethods font_foreign_class(WrenVM* vm)
 {
-	return (WrenForeignClassMethods) {
-		.allocate = font_allocate,
-		.finalize = font_finalize,
-	};
+  return (WrenForeignClassMethods) {
+    .allocate = font_allocate,
+    .finalize = font_finalize,
+  };
+}
+
+APIRegistry font_api[] = {
+  { "set_tab_width(_)", f_set_tab_width },
+  { "get_width(_)",     f_get_width     },
+  { "get_height()",     f_get_height    },
+  { NULL,               NULL            },
+};
+
+WrenForeignMethodFn font_foreign_method(WrenVM* vm, const char* signature)
+{
+  for (int i = 0; font_api[i].signature != NULL; i++)
+  {
+    APIRegistry* api = font_api + i;
+    if (!strncmp(signature, api->signature, strlen(signature)))
+      return api->func;
+  }
+  return NULL;
 }

@@ -38,6 +38,7 @@ class Core {
 		__redraw = true
 
 		__root_view = RootView.new()
+		// until I find where the hell is __active_view actually set
 		set_active_view(__root_view)
 	}
 
