@@ -126,16 +126,17 @@ class Program {                                     \n\
   }                                                 \n\
 }                                                   \n\
 \n\
-class Renderer {                                    \n\
-  foreign static show_debug(enable)                 \n\
-  foreign static get_size()                         \n\
-  foreign static begin_frame()                      \n\
-  foreign static end_frame()                        \n\
-  foreign static set_clip_rect(x, y, w, h)          \n\
-  foreign static set_clip_rect(l)                   \n\
-  foreign static draw_rect(x, y, w, h, color)       \n\
-  foreign static draw_text(font, text, x, y, color) \n\
-}                                                   \n\
+class Renderer {                                                                             \n\
+  foreign static show_debug(enable)                                                          \n\
+  foreign static get_size()                                                                  \n\
+  foreign static begin_frame()                                                               \n\
+  foreign static end_frame()                                                                 \n\
+  foreign static set_clip_rect(x, y, w, h)                                                   \n\
+  foreign static set_clip_rect(l)                                                            \n\
+  foreign static draw_rect(x, y, w, h, color)                                                \n\
+  static draw_text(font, text, x, y, color) { draw_text_(font, text.toString, x, y, color) } \n\
+  foreign static draw_text_(font, text, x, y, color)                                         \n\
+}                                                                                            \n\
 \n\
 foreign class Font {                                \n\
   construct load(filename, size) {}                 \n\

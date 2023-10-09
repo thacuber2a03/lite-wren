@@ -1,11 +1,37 @@
+import "core/command" for Command
+
+var Modkey_map = {
+  "left ctrl":   "ctrl",
+  "right ctrl":  "ctrl",
+  "left shift":  "shift",
+  "right shift": "shift",
+  "left alt":    "alt",
+  "right alt":   "altgr"
+}
+
+var Modkeys = [ "ctrl", "alt", "altgr", "shift" ]
+
+var Key_to_stroke = Fn.new { |k|
+  var stroke = ""
+  for (mk in Modkeys) {
+    if (Keymap.modkeys[mk]) stroke = stroke + mk + "+"
+  }
+  return stroke + k
+}
+
 class Keymap {
+  static modkeys {
+    if (!__modkeys) __modkeys = {}
+    return __modkeys
+  }
+
   static map {
-    if (__map is Null) __map = {}
+    if (!__map) __map = {}
     return __map
   }
 
   static reverse_map {
-    if (__reverse_map is Null) __reverse_map = {}
+    if (__reverse_map == null) __reverse_map = {}
     return __reverse_map
   }
 
@@ -30,6 +56,31 @@ class Keymap {
   }
 
   static get_binding(cmd) { Keymap.reverse_map[cmd] }
+
+  static on_key_pressed(k) {
+    var mk = Modkey_map[k]
+    if (mk) {
+      Keymap.modkeys[mk] = true
+      // workaround for Windows where 'altgr' is treated as 'ctrl+alt'
+      if (mk == "altgr") Keymap.modkeys["ctrl"] = false
+    } else {
+      var stroke = Key_to_stroke.call(k)
+      var commands = Keymap.map[stroke]
+      if (commands) {
+        for (cmd in commands) {
+          var performed = Command.perform(cmd)
+          if (performed) break
+        }
+        return true
+      }
+    }
+    return false
+  }
+
+  static on_key_released(k) {
+    var mk = Modkey_map[k]
+    if (mk) Keymap.modkeys[mk] = false
+  }
 }
 
 // I'm not formatting something like this again

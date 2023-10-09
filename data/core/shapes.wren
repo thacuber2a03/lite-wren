@@ -24,10 +24,16 @@ class Vector {
 	}
 
 	[prop]=(value) {
-		if (prop == "x") _x = value
-		if (prop == "y") _y = value
-		Fiber.abort("invalid property assign %(prop)")
+		if (prop == "x") {
+			_x = value
+		} else if (prop == "y") {
+			_y = value
+		} else {
+			Fiber.abort("invalid property assign %(prop)")
+		}
 	}
+
+	toString { "(%(x), %(y))" }
 }
 
 class Rect {
@@ -40,11 +46,15 @@ class Rect {
 
 	x { _x }
 	y { _y }
+	w { _w }
+	h { _h }
 	width { _w }
 	height { _h }
 
 	x=(v) { _x=v }
 	y=(v) { _y=v }
+	w=(v) { _w=v }
+	h=(v) { _h=v }
 	width=(v) { _w=v }
 	height=(v) { _h=v }
 

@@ -40,13 +40,15 @@ static void f_poll_event(WrenVM* vm)
   int mx, my, wx, wy;
   SDL_Event e;
 
-  wrenSetSlotNull(vm, 0);
-
-top:
-  if (!SDL_PollEvent(&e)) return;
-
   wrenEnsureSlots(vm, 2);
   wrenSetSlotNewList(vm, 0);
+
+top:
+  if (!SDL_PollEvent(&e))
+  {
+    wrenSetSlotNull(vm, 0);
+    return;
+  }
 
   switch (e.type)
   {
@@ -75,7 +77,6 @@ top:
       }
 
       if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) SDL_FlushEvent(SDL_KEYDOWN);
-      wrenSetSlotNull(vm, 0);
       goto top;
 
     case SDL_DROPFILE:

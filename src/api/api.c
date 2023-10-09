@@ -38,7 +38,7 @@ static const char* typetostring(WrenType type)
     if (got != expected) { \
       throwerror(vm, \
         "Expected argument %i to have type %s, got %s instead", \
-        slot+1, typetostring(expected), typetostring(got) \
+        slot, typetostring(expected), typetostring(got) \
       ); \
     } \
   } while(0)

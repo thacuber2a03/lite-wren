@@ -54,30 +54,28 @@ class View {
     )
   }
 
-  scrollbar_overlaps_point(x, y) {
+  scrollbar_overlaps_point(p) {
     var s = get_scrollbar_rect()
-    return x >= s.x - s.width * 3 && x < s.x + s.width && y >= s.y && y < sy + s.height
+    return p.x >= s.x - s.width * 3 && p.x < s.x + s.width && p.y >= s.y && p.y < sy + s.height
   }
 
-  on_mouse_pressed(event) {
-    var x = event[1]
-    var y = event[2]
-    if (scrollbar_overlaps_point(x, y)) {
+  on_mouse_pressed(button, mousePos, clicks) {
+    if (scrollbar_overlaps_point(mousePos)) {
       _dragging_scrollbar = true
       return true
     }
   }
 
-  on_mouse_released(event) {
+  on_mouse_released(button, mousePos) {
     _dragging_scrollbar = false
   }
 
-  on_mouse_moved(event) {
+  on_mouse_moved(absolute, relative) {
     if (_dragging_scrollbar) {
-      var delta = get_scrollable_size() / _size.y * dy
+      var delta = get_scrollable_size() / _size.y * relative.y
       _scroll[1].y = _scroll[1].y + delta
     }
-    _hovered_scrollbar = scrollbar_overlaps_point(x, y)
+    _hovered_scrollbar = scrollbar_overlaps_point(absolute)
   }
 
   on_text_input(text) { /* no-op */ }
@@ -95,8 +93,8 @@ class View {
   }
 
   get_content_offset() {
-    var x = (_position.x - _scroll.x).round
-    var y = (_position.y - _scroll.y).round
+    var x = (_position.x - _scroll[0].x).round
+    var y = (_position.y - _scroll[0].y).round
     return Vector.new(x, y)
   }
 

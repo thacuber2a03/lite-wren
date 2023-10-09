@@ -116,15 +116,15 @@ static void f_draw_text(WrenVM* vm)
 }
 
 APIRegistry renderer_api[] = {
-  { "show_debug(_)",          f_show_debug         },
-  { "get_size()",             f_get_size           },
-  { "begin_frame()",          f_begin_frame        },
-  { "end_frame()",            f_end_frame          },
-  { "set_clip_rect(_)",       f_set_clip_rect_list },
-  { "set_clip_rect(_,_,_,_)", f_set_clip_rect      },
-  { "draw_rect(_,_,_,_,_)",   f_draw_rect          },
-  { "draw_text(_,_,_,_,_)",   f_draw_text          },
-  { NULL,                     NULL                 }
+  { "show_debug(_)",           f_show_debug         },
+  { "get_size()",              f_get_size           },
+  { "begin_frame()",           f_begin_frame        },
+  { "end_frame()",             f_end_frame          },
+  { "set_clip_rect(_)",        f_set_clip_rect_list },
+  { "set_clip_rect(_,_,_,_)",  f_set_clip_rect      },
+  { "draw_rect(_,_,_,_,_)",    f_draw_rect          },
+  { "draw_text_(_,_,_,_,_)",   f_draw_text          },
+  { NULL,                      NULL                 }
 };
 
 WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, const char* signature)
