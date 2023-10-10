@@ -231,10 +231,10 @@ class Node {
   }
 
   get_tab_overlapping_point(p) {
-    if (_views == 1) return
-    var rect = get_tab_rect(1)
+    if (_views.count <= 1) return
+    var rect = get_tab_rect(0)
     if (p.x >= rect.x && p.y >= rect.y &&  p.x < rect.x + rect.w * _views.count && p.y < p.y + rect.h) {
-      return ((p.x - rect.x) / rect.w).floor + 1
+      return ((p.x - rect.x) / rect.w).floor
     }
   }
 
@@ -253,7 +253,7 @@ class Node {
   get_tab_rect(idx) {
     var tw = Style.tab_width.min((_size.x / _views.count).ceil)
     var h = Style.font.get_height() + Style.padding.y * 2
-    return Rect.new(_position.x + (idx-1) * tw, _position.y, tw, h)
+    return Rect.new(_position.x + idx * tw, _position.y, tw, h)
   }
 
   get_divider_rect() {
@@ -431,7 +431,7 @@ class RootView is View {
     var idx = node.get_tab_overlapping_point(mousePos)
     if (idx) {
       node.set_active_view(node.views[idx])
-      if (event[1] == "middle") node.close_active_view(_root_node)
+      if (button == "middle") node.close_active_view(_root_node)
     } else {
       Core.set_active_view(node.active_view)
       node.active_view.on_mouse_pressed(button, mousePos, clicks)

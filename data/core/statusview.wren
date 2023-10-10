@@ -2,10 +2,12 @@ import "api" for Program, Font
 import "core" for Core
 import "core/shapes" for Rect
 import "core/common" for Common
+import "core/command" for Command
 import "core/config" for Config
 import "core/style" for Style
 import "core/view" for View
 import "core/docview" for DocView
+import "core/logview" for LogView
 
 class StatusView is View {
 	static separator { "      " }
@@ -19,11 +21,9 @@ class StatusView is View {
 
 	on_mouse_pressed(button, mousePos, clicks) {
 		Core.set_active_view(Core.last_active_view)
-		/*
 		if (Program.get_time() < _message_timeout && !(Core.active_view is LogView)) {
 			Command.perform("core:open-log")
 		}
-		*/
 	}
 
 	show_message(icon, icon_color, text) {

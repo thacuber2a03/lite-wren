@@ -59,4 +59,6 @@ class Rect {
 	height=(v) { _h=v }
 
 	asList { [x, y, width, height] }
+
+	toString { "[%(x), %(y), %(w), %(h)]" }
 }

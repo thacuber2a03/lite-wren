@@ -1,4 +1,5 @@
 import "api" for Renderer
+import "core" for Core
 import "core/shapes" for Vector, Rect
 import "core/config" for Config
 import "core/style" for Style
@@ -31,7 +32,7 @@ class View {
       val = Common.lerp(val, dest, rate)
     }
 
-    if (val != dest) core.redraw = true
+    if (val != dest) Core.redraw = true
     return val
   }
 
