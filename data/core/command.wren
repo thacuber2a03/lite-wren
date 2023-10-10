@@ -1,3 +1,4 @@
+import "core" for Core
 import "core/common" for Common
 
 var Always_true = Fn.new { true }
@@ -18,7 +19,6 @@ class Command {
 	}
 
 	static add(predicate, map) {
-		import "core" for Core
 		predicate = predicate || Always_true
 		// string predicates are unsupported
 		if (predicate is Class) {
@@ -48,7 +48,6 @@ class Command {
 	}
 
 	static perform(args) {
-		import "core" for Core
 		var res = Core.try(args, Perform)
 		return !res[0] || res[1]
 	}

@@ -1,4 +1,5 @@
 import "api" for Program, Font
+import "core" for Core
 import "core/shapes" for Rect
 import "core/common" for Common
 import "core/config" for Config
@@ -17,7 +18,6 @@ class StatusView is View {
 	}
 
 	on_mouse_pressed(button, mousePos, clicks) {
-		import "core" for Core
 		Core.set_active_view(Core.last_active_view)
 		/*
 		if (Program.get_time() < _message_timeout && !(Core.active_view is LogView)) {
@@ -81,7 +81,6 @@ class StatusView is View {
 	}
 
 	get_items() {
-		import "core" for Core
 		if (Core.active_view is DocView) {
 			var dv = Core.active_view
 			var sel = dv.doc.get_selection()

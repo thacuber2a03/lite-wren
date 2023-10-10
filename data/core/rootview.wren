@@ -1,4 +1,5 @@
 import "api" for Program, Renderer
+import "core" for Core
 import "core/shapes" for Vector, Rect
 import "core/common" for Common
 import "core/style" for Style
@@ -112,7 +113,6 @@ class Node {
   split(dir, view) { split(dir, view, false) }
 
   split(dir, view, locked) {
-    import "core" for Core
     if (!__type_map) {
       __type_map = {
         "up": "vsplit", "down": "vsplit", "left": "hsplit", "right": "hsplit"
@@ -139,7 +139,6 @@ class Node {
   }
 
   close_active_view(root) {
-    import "core" for Core
     var do_close = Fn.new {
       if (_views.count > 1) {
         var idx = get_view_idx(_active_view)
@@ -177,7 +176,6 @@ class Node {
   }
 
   set_active_view(view) {
-    import "core" for Core
     Common.assert(_type == "leaf", "Tried to set active view on non-leaf node")
     _active_view = view
     Core.set_active_view(view)
@@ -338,7 +336,6 @@ class Node {
   }
 
   draw_tabs() {
-    import "core" for Core
     var tab_rect = get_tab_rect(1)
     var ds = Style.divider_size
     Core.push_clip_rect(rect.x, rect.y, _size.x, rect.h)
@@ -369,7 +366,6 @@ class Node {
   }
 
   draw() {
-    import "core" for Core
     if (_type == "leaf") {
       if (_views.count > 1) draw_tabs()
       var pos = _active_view.position
@@ -401,12 +397,10 @@ class RootView is View {
   }
 
   get_active_node() {
-    import "core" for Core
     return _root_node.get_node_for_view(Core.active_view)
   }
 
   open_doc(doc) {
-    import "core" for Core
     var node = get_active_node()
     if (node.locked && Core.last_active_view) {
       Core.set_active_view(Core.last_active_view)
@@ -428,7 +422,6 @@ class RootView is View {
   }
 
   on_mouse_pressed(button, mousePos, clicks) {
-    import "core" for Core
     var div = _root_node.get_divider_overlapping_point(mousePos)
     if (div) {
       _dragged_divider = div
@@ -483,7 +476,6 @@ class RootView is View {
   }
 
   on_text_input(event) {
-    import "core" for Core
     return Core.active_view.on_text_input(event)
   }
 

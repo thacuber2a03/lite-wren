@@ -1,8 +1,12 @@
 import "api" for Program
+import "core" for Core
 import "core/common" for Common
 import "core/shapes" for Vector
 import "core/view" for View
 import "core/doc" for Doc
+import "core/style" for Style
+import "core/config" for Config
+import "core/keymap" for Keymap
 
 class Position {
   construct new() {
@@ -49,7 +53,6 @@ class DocView is View {
   }
 
   try_close(do_close) {
-    import "core" for Core
     if (_doc.is_dirty() && Core.get_views_referencing_doc(_doc) == 1) {
       Core.command_view.enter("Unsaved Changes; Confirm Close", Fn.new { |unused, item|
         var start = item.text[0]
@@ -90,10 +93,10 @@ class DocView is View {
   get_gutter_width() { get_font().get_width(_doc.lines.count) + Style.padding.x * 2 }
 
   get_line_screen_position(idx) {
-    var x, y = get_content_offset()
+    var p = get_content_offset()
     var lh = get_line_height()
     var gw = get_gutter_width()
-    return Vector.new(x + gw, y + (idx-1) * lh + Style.padding.y)
+    return Vector.new(p.x + gw, p.y + (idx-1) * lh + Style.padding.y)
   }
 
   get_line_text_y_offset() {
@@ -156,7 +159,7 @@ class DocView is View {
     this.scroll[1].y = this.scroll[1].y.max(max)
     var gw = get_gutter_width()
     var xoffset = get_col_x_offset(line, col)
-    var max = xoffset - this.size.x + gw + this.size.x / 5
+    max = xoffset - this.size.x + gw + this.size.x / 5
     this.scroll[1].x = 0.max(max)
   }
 

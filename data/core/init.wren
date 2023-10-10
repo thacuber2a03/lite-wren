@@ -1,11 +1,5 @@
 import "api" for Program, Renderer
 import "core/shapes" for Vector, Rect
-import "core/common" for Common
-import "core/config" for Config
-import "core/style" for Style
-import "core/keymap" for Keymap
-import "core/rootview" for RootView
-import "core/statusview" for StatusView
 
 class Core {
   static redraw { __redraw }
@@ -206,3 +200,12 @@ class Core {
   }
 }
 
+// this looks really weird, but compared to
+// every other file, this is the best approach
+
+import "core/common" for Common
+import "core/config" for Config
+import "core/style" for Style
+import "core/keymap" for Keymap
+import "core/rootview" for RootView
+import "core/statusview" for StatusView
