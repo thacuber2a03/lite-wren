@@ -19,9 +19,9 @@ static RenColor checkcolor(WrenVM* vm, int idx, int def)
   wrenGetListElement(vm, idx, 2, idx+1);
   color.b = (uint8_t)checkdouble(vm, idx+1);
 
-  if (wrenGetListCount(vm, idx) >= 4)
+  if (wrenGetListCount(vm, idx) >= 3)
   {
-    wrenGetListElement(vm, idx, 0, idx+1);
+    wrenGetListElement(vm, idx, 3, idx+1);
     color.a = (uint8_t)checkdouble(vm, idx+1);
   }
   else color.a = 255;
