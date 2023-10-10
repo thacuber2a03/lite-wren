@@ -23,14 +23,13 @@ class Core {
     var files = []
     if (Program.ARGS.count > 1) {
       for (i in 1...Program.ARGS.count) {
-        var info = Program.get_file_info(Program.ARGS[i]) || {}
+        var info = Program.get_file_info(Program.ARGS[i])
+        if (!info) continue
 
-        if (info.contains("type")) {
-          if (info["type"] == "file") {
-            files.add(Program.absolute_path(Program.ARGS[i]))
-          } else if (info["type"] == "dir") {
-            project_dir = Program.ARGS[i]
-          }
+        if (info["type"] == "file") {
+          files.add(Program.absolute_path(Program.ARGS[i]))
+        } else if (info["type"] == "dir") {
+          project_dir = Program.ARGS[i]
         }
       }
     }
@@ -140,7 +139,7 @@ class Core {
     } else if (type == "filedropped") {
       // TODO(thacuber2a03): implement
     } else if (type == "quit") {
-      Core.quit(true)
+      Core.quit()
     }
   }
 
