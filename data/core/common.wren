@@ -32,9 +32,11 @@ class Common {
 
 		if (res != null) Fiber.abort("bad color string %(str)")
 
-		col.add(256)
+		col.add(0xff)
 		return col
 	}
+
+	static assert(cond) { assert(cond, "assertion failed") }
 
 	static assert(cond, err) {
 		if (!cond) Fiber.abort(err)
