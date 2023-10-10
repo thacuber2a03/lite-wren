@@ -75,7 +75,98 @@ class DocView is View {
     }
     return name + post
   }
-}
 
-var test = DocView.new(Doc.new())
-System.print(test.get_name())
+  get_scrollable_size() { get_line_height() * (_doc.lines.count - 1) + self.size.y }
+
+  get_font() {
+    if (_font == "font") return Style.font
+    if (_font == "big_font") return Style.big_font
+    if (_font == "code_font") return Style.code_font
+    if (_font == "icon_font") return Style.icon_font
+  }
+
+  get_line_height() { (get_font().get_height() * Config.line_height).floor }
+
+  get_gutter_width() { get_font().get_width(_doc.lines.count) + Style.padding.x * 2 }
+
+  get_line_screen_position(idx) {
+    var x, y = get_content_offset()
+    var lh = get_line_height()
+    var gw = get_gutter_width()
+    return Vector.new(x + gw, y + (idx-1) * lh + Style.padding.y)
+  }
+
+  get_line_text_y_offset() {
+    var lh = get_line_height()
+    var th = get_font().get_height()
+    return (lh - th) / 2
+  }
+
+  get_visible_line_range() {
+    var bounds = get_content_bounds()
+    var lh = get_line_height()
+    var minline = 1.max((y / lh).floor)
+    var maxline = _doc.lines.count.min((y2 / lh) + 1)
+    return [minline, maxline]
+  }
+
+  get_col_x_offset(line, col) {
+    if (line > _doc.lines.count) return 0
+    return get_font().get_width(_doc.lines[line][0...col])
+  }
+
+  get_x_offset_col(line, x) {
+    var text = _doc.lines[line]
+
+    var xoffset = 0
+    var last_i = 1
+    var i = 1
+    for (char in text.codePoints) {
+      var w = get_font().get_width(char)
+      if (xoffset >= x) return (xoffset - x > w / 2) ? last_i : i
+      xoffset = xoffset + w
+      last_i = i
+      i = i + char.count
+    }
+
+    return text.count
+  }
+
+  resolve_screen_position(x, y) {
+    var o = get_line_screen_position(1)
+    var line = ((y - o.y) / get_line_height()).floor + 1
+    line = line.clamp(0, _doc.lines.count)
+    var col = get_x_offset_col(line, x - o.x)
+    return Position.new(line, col)
+  }
+
+  scroll_to_line(line, ignore_if_visible, instant) {
+    var range = get_visible_line_range()
+    if (!(ignore_if_visible && line > range[0] && line < range[1])) {
+      var lh = get_line_height()
+      this.scroll[1].y = 0.max(lh * (line - 1) - this.size.y / 2)
+      if (instant) this.scroll[0].y = this.scroll[1].y
+    }
+  }
+
+  scroll_to_make_visible(line, col) {
+    var min = get_line_height() * (line - 1)
+    var max = get_line_height() * (line + 2) - this.size.y
+    this.scroll[1].y = this.scroll[1].y.min(min)
+    this.scroll[1].y = this.scroll[1].y.max(max)
+    var gw = get_gutter_width()
+    var xoffset = get_col_x_offset(line, col)
+    var max = xoffset - this.size.x + gw + this.size.x / 5
+    this.scroll[1].x = 0.max(max)
+  }
+
+  on_mouse_pressed(button, mousePos, clicks) {
+    var caught = super.on_mouse_pressed(button, mousePos, clicks)
+    if (caught) return
+    if (Keymap.modkeys["shift"]) {
+      if (clicks == 1) {
+        // TODO(thacuber2a03): finish this
+      }
+    }
+  }
+}
