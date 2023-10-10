@@ -39,7 +39,6 @@ class Core {
     __redraw = true
 
     __root_view = RootView.new()
-    set_active_view(__root_view)
     __status_view = StatusView.new()
 
     __root_view.root_node.split("down", __status_view, true)
