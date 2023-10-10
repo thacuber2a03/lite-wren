@@ -172,7 +172,7 @@ static void f_wait_event(WrenVM* vm)
 static int checkoption(WrenVM* vm, int slot, const char* def, const char* list[])
 {
   const char* name = def;
-  if (wrenGetSlotType(vm, 0) == WREN_TYPE_NULL) name = wrenGetSlotString(vm, slot);
+  if (wrenGetSlotType(vm, 1) != WREN_TYPE_NULL) name = wrenGetSlotString(vm, slot);
 
   for (int i = 0; list[i]; i++)
     if (!strcmp(list[i], name)) return i;
