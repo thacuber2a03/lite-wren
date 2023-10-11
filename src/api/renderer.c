@@ -10,6 +10,8 @@ static RenColor checkcolor(WrenVM* vm, int idx, int def)
     return (RenColor) { def, def, def, 255 };
   }
 
+  checklist(vm, idx);
+
   wrenEnsureSlots(vm, idx+1);
 
   wrenGetListElement(vm, idx, 0, idx+1);

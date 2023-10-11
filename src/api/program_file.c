@@ -11,7 +11,7 @@ void file_allocate(WrenVM* vm)
   *self = fopen(filename, mode);
   if (!*self)
   {
-    throwerror(vm, "failed to open file");
+    throwerror(vm, "Failed to open file: %s", strerror(errno));
     return;
   }
 }
@@ -28,10 +28,11 @@ void f_read(WrenVM* vm)
 {
   FILE** self = (FILE**)wrenGetSlotForeign(vm, 0);
   checkfile(self, "read from");
-  size_t bytes = (size_t)wrenGetSlotDouble(vm, 1);
+
+  size_t bytes = (size_t)checkdouble(vm, 1);
   char* buf = malloc(bytes);
-  size_t bytesRead = fread(buf, sizeof(char), bytes, *self);
-  if (!bytesRead) {
+  size_t bytesRead = fread(buf, 1, bytes, *self);
+  if (bytes != bytesRead) {
     throwerror(vm, "Couldn't read all bytes from file: %s", strerror(errno));
     return;
   }
@@ -43,40 +44,22 @@ void f_read_line(WrenVM* vm)
 {
   FILE** self = (FILE**)wrenGetSlotForeign(vm, 0);
   checkfile(self, "read line from");
-  int len = 0, cap = 16; // TODO(thacuber2a03): figure out best initial capacity
-  char* buf = malloc(cap);
 
-  int c;
-  while ((c = fgetc(*self)) != EOF)
-  {
-    if (c == '\n') break;
-    if (len > cap)
-    {
-      cap *= 2; // TODO(thacuber2a03): double capacity?
-      void* temp = realloc(buf, cap);
-      if (temp == NULL)
-      {
-        fprintf(stderr, "Fatal error: allocation failed\n");
-        exit(EXIT_FAILURE);
-      }
-      buf = temp;
-    }
-    buf[len++] = c;
-  }
-
-  if (len == 0) wrenSetSlotNull(vm, 0);
+  char* line = NULL;
+  size_t size = 0;
+  if (getline(&line, &size, *self))
+    wrenSetSlotBytes(vm, 0, line, size);
   else
-  {
-    buf[len-1] = '\0';
-    wrenSetSlotBytes(vm, 0, buf, len);
-  }
-  free(buf);
+    wrenSetSlotNull(vm, 0);
+
+  free(line);
 }
 
 void f_write(WrenVM* vm)
 {
   FILE** self = (FILE**)wrenGetSlotForeign(vm, 0);
   checkfile(self, "write to");
+
   const char* string = checkstring(vm, 1);
   if (!string) return;
   size_t written = fwrite(string, sizeof(char), strlen(string), *self);
@@ -105,35 +88,30 @@ void f_seek(WrenVM* vm)
 void f_tell(WrenVM* vm)
 {
   FILE** self = (FILE**)wrenGetSlotForeign(vm, 0);
-  checkfile(self, "tell position of");
+  checkfile(self, "tell position of a");
   wrenSetSlotDouble(vm, 0, ftell(*self));
 }
 
 #undef checkfile
 
-void closefile(FILE** fpp)
-{
-  if (*fpp)
-  {
-    fclose(*fpp);
-    *fpp = NULL;
-  }
-}
+#define closefile(fpp)    \
+  do {                    \
+    if (*(fpp) != NULL) { \
+      fclose(*(fpp));     \
+      *(fpp) = NULL;      \
+    }                     \
+  } while(0)
 
 void f_close(WrenVM* vm)
 {
   FILE** self = (FILE**)wrenGetSlotForeign(vm, 0);
-  if (!*self) {
-    throwerror(vm, "File is already closed");
-    return;
-  }
+  if (!*self) { throwerror(vm, "File is already closed"); return; }
   closefile(self);
 }
 
 void file_finalize(void* data)
 {
-  FILE** self = (FILE**) data;
-  closefile(self);
+  closefile((FILE**) data);
 }
 
 WrenForeignClassMethods file_foreign_class(WrenVM* vm)

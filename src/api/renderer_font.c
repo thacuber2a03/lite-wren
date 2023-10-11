@@ -47,8 +47,8 @@ WrenForeignClassMethods font_foreign_class(WrenVM* vm)
 
 APIRegistry font_api[] = {
   { "set_tab_width(_)", f_set_tab_width },
-  { "get_width(_)",     f_get_width     },
-  { "get_height()",     f_get_height    },
+  { "width(_)",         f_get_width     },
+  { "height",           f_get_height    },
   { NULL,               NULL            },
 };
 

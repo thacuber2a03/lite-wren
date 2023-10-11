@@ -3,6 +3,19 @@
 
 #include "lib/wren/wren.h"
 
+#define VERSION "1.11"
+
+#ifdef _WIN32
+#define PATHSEP "\\"
+#else
+#define PATHSEP "/"
+#endif
+
+#define DATA_FOLDER   "data"
+#define INIT_FILENAME "init.wren"
+
+extern const char *api, *apiModuleName;
+
 typedef struct {
   const char* signature;
   WrenForeignMethodFn func;

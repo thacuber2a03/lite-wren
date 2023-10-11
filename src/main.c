@@ -13,14 +13,6 @@
   #include <mach-o/dyld.h>
 #endif
 
-#define VERSION "1.11"
-
-#ifdef _WIN32
-  #define PATHSEP "\\"
-#else
-  #define PATHSEP "/"
-#endif
-
 SDL_Window *window;
 
 static WrenHandle *ARGS = NULL, *PLATFORM = NULL, *SCALE = NULL, *EXEFILE = NULL;
@@ -79,82 +71,6 @@ static void error_func(WrenVM* vm, WrenErrorType type,
       break;
   }
 }
-
-#define DATA_FOLDER   "data"
-#define INIT_FILENAME "init.wren"
-
-static const char* apiModuleName = "api";
-static const char* api = "\
-class Program {                                     \n\
-  foreign static poll_event()                       \n\
-  foreign static wait_event(seconds)                \n\
-  foreign static set_cursor(cursor)                 \n\
-  foreign static set_window_title(title)            \n\
-  foreign static set_window_mode(mode)              \n\
-  foreign static window_has_focus()                 \n\
-  foreign static show_confirm_dialog(title, msg)    \n\
-  foreign static chdir(dir)                         \n\
-  foreign static list_dir(path)                     \n\
-  foreign static absolute_path(path)                \n\
-  foreign static get_file_info(file)                \n\
-  foreign static get_clipboard()                    \n\
-  foreign static set_clipboard(contents)            \n\
-  foreign static get_time()                         \n\
-  foreign static sleep(seconds)                     \n\
-  foreign static exec(command)                      \n\
-  foreign static fuzzy_match(str, pattern)          \n\
-  foreign static exit(code)                         \n\
-  static exit() { exit(0) }                         \n\
-                                                    \n\
-  foreign static ARGS                               \n\
-  static VERSION { \"" VERSION "\" }                \n\
-  static PATHSEP { \"" PATHSEP "\" }                \n\
-  foreign static PLATFORM                           \n\
-  foreign static SCALE                              \n\
-  foreign static EXEFILE                            \n\
-  static EXEDIR {                                   \n\
-    if (__exedir) return __exedir                   \n\
-    var exefile = Program.EXEFILE                   \n\
-    for (i in (exefile.count-1)..0) {               \n\
-      if (exefile[i] == Program.PATHSEP) {          \n\
-        __exedir = exefile[0...i]                   \n\
-        return __exedir                             \n\
-      }                                             \n\
-    }                                               \n\
-    __exedir = \".\"                                \n\
-    return __exedir                                 \n\
-  }                                                 \n\
-}                                                   \n\
-\n\
-class Renderer {                                                                             \n\
-  foreign static show_debug(enable)                                                          \n\
-  foreign static get_size()                                                                  \n\
-  foreign static begin_frame()                                                               \n\
-  foreign static end_frame()                                                                 \n\
-  foreign static set_clip_rect(x, y, w, h)                                                   \n\
-  foreign static set_clip_rect(l)                                                            \n\
-  foreign static draw_rect(x, y, w, h, color)                                                \n\
-  static draw_text(font, text, x, y, color) { draw_text_(font, text.toString, x, y, color) } \n\
-  foreign static draw_text_(font, text, x, y, color)                                         \n\
-}                                                                                            \n\
-\n\
-foreign class Font {                \n\
-  construct load(filename, size) {} \n\
-  foreign set_tab_width(width)      \n\
-  foreign get_width(text)           \n\
-  foreign get_height()              \n\
-}                                   \n\
-\n\
-foreign class File {                \n\
-  construct load(filename, mode) {} \n\
-  foreign read(bytes)               \n\
-  foreign read_line()               \n\
-  foreign write(string)             \n\
-  foreign seek(off, whence)         \n\
-  foreign tell()                    \n\
-  foreign close()                   \n\
-}                                   \n\
-";
 
 static void import_complete(WrenVM* vm, const char* name, WrenLoadModuleResult res)
 {
