@@ -138,18 +138,27 @@ class Renderer {                                                                
   foreign static draw_text_(font, text, x, y, color)                                         \n\
 }                                                                                            \n\
 \n\
-foreign class Font {                                \n\
-  construct load(filename, size) {}                 \n\
-  foreign set_tab_width(width)                      \n\
-  foreign get_width(text)                           \n\
-  foreign get_height()                              \n\
-}                                                   \n\
+foreign class Font {                \n\
+  construct load(filename, size) {} \n\
+  foreign set_tab_width(width)      \n\
+  foreign get_width(text)           \n\
+  foreign get_height()              \n\
+}                                   \n\
+\n\
+foreign class File {                \n\
+  construct load(filename, mode) {} \n\
+  foreign read(bytes)               \n\
+  foreign read_line()               \n\
+  foreign write(string)             \n\
+  foreign seek(off, whence)         \n\
+  foreign tell()                    \n\
+  foreign close()                   \n\
+}                                   \n\
 ";
 
 static void import_complete(WrenVM* vm, const char* name, WrenLoadModuleResult res)
 {
-  if (res.source && res.source != api)
-    free((char*) res.source);
+  if (res.source && res.source != api) free((char*) res.source);
 }
 
 static WrenLoadModuleResult import_func(WrenVM* vm, const char* name)

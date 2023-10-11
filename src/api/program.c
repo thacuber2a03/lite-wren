@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -167,18 +168,6 @@ static void f_wait_event(WrenVM* vm)
 {
   int n = checkdouble(vm, 1);
   wrenSetSlotBool(vm, 0, SDL_WaitEventTimeout(NULL, n * 1000));
-}
-
-static int checkoption(WrenVM* vm, int slot, const char* def, const char* list[])
-{
-  const char* name = def;
-  if (wrenGetSlotType(vm, 1) != WREN_TYPE_NULL) name = wrenGetSlotString(vm, slot);
-
-  for (int i = 0; list[i]; i++)
-    if (!strcmp(list[i], name)) return i;
-
-  throwerror(vm, "Invalid option %s", name);
-  return -1;
 }
 
 static SDL_Cursor* cursor_cache[SDL_SYSTEM_CURSOR_HAND + 1];

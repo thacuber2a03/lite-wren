@@ -12,6 +12,7 @@ WrenForeignClassMethods api_foreign_class(WrenVM* vm, const char* className);
 WrenForeignMethodFn api_foreign_method(WrenVM* vm, const char* className, const char* signature);
 
 void throwerror(WrenVM* vm, const char* fmt, ...);
+int checkoption(WrenVM* vm, int slot, const char* def, const char* list[]);
 bool checkbool(WrenVM* vm, int slot);
 double checkdouble(WrenVM* vm, int slot);
 void checklist(WrenVM* vm, int slot);

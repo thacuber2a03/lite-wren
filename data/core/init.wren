@@ -1,3 +1,4 @@
+import "file_test" // temporary; read file
 import "api" for Program, Renderer
 import "core/shapes" for Vector, Rect
 
@@ -39,6 +40,7 @@ class Core {
     __redraw = true
 
     __root_view = RootView.new()
+    __command_view = CommandView.new()
     __status_view = StatusView.new()
 
     __root_view.root_node.split("down", __status_view, true)
@@ -200,6 +202,7 @@ class Core {
 }
 
 // this looks really weird, but compared to
+// writing 'import "core" for Core' at the end of
 // every other file, this is the best approach
 
 import "core/common" for Common
@@ -208,3 +211,4 @@ import "core/style" for Style
 import "core/keymap" for Keymap
 import "core/rootview" for RootView
 import "core/statusview" for StatusView
+import "core/commandview" for CommandView

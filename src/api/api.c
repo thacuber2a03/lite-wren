@@ -16,6 +16,19 @@ void throwerror(WrenVM* vm, const char* fmt, ...)
   wrenAbortFiber(vm, 0);
 }
 
+int checkoption(WrenVM* vm, int slot, const char* def, const char* list[])
+{
+  const char* name = def;
+  if (wrenGetSlotType(vm, 1) != WREN_TYPE_NULL) name = wrenGetSlotString(vm, slot);
+
+  for (int i = 0; list[i]; i++)
+    if (!strcmp(list[i], name)) return i;
+
+  throwerror(vm, "Invalid option %s", name);
+  return -1;
+}
+
+
 static const char* typetostring(WrenType type)
 {
   switch (type)
@@ -77,11 +90,13 @@ WrenForeignMethodFn program_foreign_method(WrenVM* vm, const char* signature);
 WrenForeignMethodFn renderer_foreign_method(WrenVM* vm, const char* signature);
 WrenForeignClassMethods font_foreign_class(WrenVM* vm);
 WrenForeignMethodFn font_foreign_method(WrenVM* vm, const char* signature);
+WrenForeignClassMethods file_foreign_class(WrenVM* vm);
+WrenForeignMethodFn file_foreign_method(WrenVM* vm, const char* signature);
 
 WrenForeignClassMethods api_foreign_class(WrenVM* vm, const char* className)
 {
-  // there's no foreign classes but this one
-  if (strcmp(className, "Font")) return (WrenForeignClassMethods) {0};
+  // well not anymore
+  if (!strcmp(className, "File")) return file_foreign_class(vm);
   return font_foreign_class(vm);
 }
 
@@ -90,5 +105,6 @@ WrenForeignMethodFn api_foreign_method(WrenVM* vm, const char* className, const 
   if (!strcmp(className, "Program" )) return program_foreign_method(vm, signature);
   if (!strcmp(className, "Renderer")) return renderer_foreign_method(vm, signature);
   if (!strcmp(className, "Font"    )) return font_foreign_method(vm, signature);
+  if (!strcmp(className, "File"    )) return file_foreign_method(vm, signature);
   return NULL;
 }

@@ -3,32 +3,10 @@ import "core" for Core
 import "core/common" for Common
 import "core/shapes" for Vector
 import "core/view" for View
-import "core/doc" for Doc
+import "core/doc" for Doc, Position
 import "core/style" for Style
 import "core/config" for Config
 import "core/keymap" for Keymap
-
-class Position {
-  construct new() {
-    _line = 0
-    _col = 0
-    _offset = 0
-  }
-
-  construct new(line, col) {
-    _line = line
-    _col = col
-    _offset = 0
-  }
-
-  line { _line }
-  col { _col }
-  offset { _offset }
-
-  line=(v) { _line }
-  col=(v) { _col }
-  offset=(v) { _offset }
-}
 
 class DocView is View {
   construct new(doc) {
