@@ -23,6 +23,8 @@ class View {
   cursor { _cursor }
   scrollable { _scrollable }
 
+  move_towards(v, dest) { move_towards(v, dest, 0.5) }
+
   move_towards(v, dest, rate) {
     var val = v
 

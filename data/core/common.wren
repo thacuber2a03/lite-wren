@@ -1,11 +1,18 @@
-import "api" for Renderer
+import "api" for Renderer, Program
 
 class Common {
-	static lerp(a, b, t) { a + (b-a) * t }
+	static lerp(a, b, t) {
+		if (!(a is List)) return a + (b-a) * t
+		var res = []
+		for (i in 0...b.count) {
+			res.insert(i, Common.lerp(a[i], b[i], t))
+		}
+		return res
+	}
 
 	static draw_text(font, color, text, align, rect) {
-		var tw = font.get_width(text)
-		var th = font.get_height()
+		var tw = font.width(text)
+		var th = font.height
 		if (align == "center") {
 			rect.x = rect.x + (rect.w - tw) / 2
 		} else if (align == "right") {
@@ -41,6 +48,22 @@ class Common {
 	static assert(cond, err) {
 		if (!cond) Fiber.abort(err)
 		return cond
+	}
+
+	static fuzzy_match_items(items, needle) {
+		var res = []
+		for (item in items) {
+			var score = Program.fuzzy_match(item.toString, needle)
+			if (score) res.add({ "text": item, "score": score })
+		}
+		res.sort { |a,b| a["score"] > b["score"] }
+		for (i in 0...res.count) res[i] = res[i]["text"]
+		return res
+	}
+
+	static fuzzy_match(haystack, needle) {
+		if (haystack is List) return fuzzy_match_items(haystack, needle)
+		return Program.fuzzy_match(haystack, needle)
 	}
 }
 

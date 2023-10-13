@@ -1,4 +1,3 @@
-import "file_test" // temporary; read file
 import "api" for Program, Renderer
 import "core/shapes" for Vector, Rect
 
@@ -7,6 +6,8 @@ class Core {
   static redraw=(v) { __redraw = v }
 
   static root_view { __root_view }
+  static command_view { __command_view }
+  static status_view { __status_view }
   static last_active_view { __last_active_view }
   static active_view { __active_view }
 
@@ -43,7 +44,10 @@ class Core {
     __command_view = CommandView.new()
     __status_view = StatusView.new()
 
-    __root_view.root_node.split("down", __status_view, true)
+    __root_view.root_node.split("down", __command_view, true)
+    __root_view.root_node.b.split("down", __status_view, true)
+
+    Command.add_defaults()
   }
 
   static quit(force) {
@@ -63,20 +67,20 @@ class Core {
     }
   }
 
-  static push_clip_rect(x, y, w, h) {
+  static push_clip_rect(rect) {
     var rect2 = __clip_rect_stack[-1]
-    var r = x + w
-    var b = y + h
+    var r = rect.x + rect.w
+    var b = rect.y + rect.h
     var r2 = rect2.x + rect2.w
     var b2 = rect2.y + rect2.h
-    x = x.max(rect2.x)
-    y = y.max(rect2.y)
+    rect.x = rect.x.max(rect2.x)
+    rect.y = rect.y.max(rect2.y)
     b = b.min(b2)
     r = r.min(r2)
-    w = r - x
-    h = b - y
-    __clip_rect_stack.add(Rect.new(x, y, w, h))
-    Renderer.set_clip_rect(x, y, w, h)
+    rect.w = r - rect.x
+    rect.h = b - rect.y
+    __clip_rect_stack.add(rect)
+    Renderer.set_clip_rect(rect.asList)
   }
 
   static pop_clip_rect() {
@@ -208,6 +212,7 @@ class Core {
 import "core/common" for Common
 import "core/config" for Config
 import "core/style" for Style
+import "core/command" for Command
 import "core/keymap" for Keymap
 import "core/rootview" for RootView
 import "core/statusview" for StatusView

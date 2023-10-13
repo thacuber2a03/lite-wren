@@ -35,7 +35,7 @@ class StatusView is View {
 	}
 
 	update() {
-		this.size.y = Style.font.get_height() + Style.padding.y * 2
+		this.size.y = Style.font.height + Style.padding.y * 2
 
 		if (Program.get_time() < _message_timeout) {
 			this.scroll[1].y = this.size.y
@@ -71,7 +71,7 @@ class StatusView is View {
 		var off = get_content_offset()
 		off.y = off.y + (yoffset || 0)
 		if (right_align) {
-			var w = draw_items(items, 0, 0) { |args| args[4].x + args[0].get_width(args[2]) }
+			var w = draw_items(items, 0, 0) { |args| args[4].x + args[0].width(args[2]) }
 			off.x = off.x + this.size.x - w - Style.padding.x
 			draw_items(items, off.x, off.y) { |args| Common.draw_text(args[0], args[1], args[2], args[3], args[4]) }
 		} else {
@@ -81,29 +81,30 @@ class StatusView is View {
 	}
 
 	get_items() {
-		if (Core.active_view is DocView) {
+		if (Core.active_view.type == "DocView") {
 			var dv = Core.active_view
 			var sel = dv.doc.get_selection()
-			var dirty = dv.doc.is_dirty()
+			sel = sel[0]
+			var dirty = dv.doc.is_dirty
 
 			return [
 				[
 					dirty ? Style.accent : Style.text, Style.icon_font, "f",
 					Style.dim, Style.font, StatusView.separator2, Style.text,
-					dv.doc.filename ? Style.text : Style.dim, dv.doc.get_name(),
+					dv.doc.filename ? Style.text : Style.dim, dv.doc.name,
 					Style.text,
 					StatusView.separator,
-					"line: ", line,
+					"line: ", sel.line,
 					StatusView.separator,
-					col > Config.line_limit ? Style.accent : Style.text, "col: ", col,
+					sel.col > Config.line_limit ? Style.accent : Style.text, "col: ", sel.col,
 					Style.text,
 					StatusView.separator,
-					"%(line / dv.doc.lines.count * 100)\%",
+					"%(sel.line / dv.doc.lines.count * 100)\%",
 				],
 				[
 					Style.icon_font, "g",
 					Style.font, Style.dim, StatusView.separator2, Style.text,
-					dv.doc.lines, " lines",
+					dv.doc.lines.count, " lines",
 					StatusView.separator,
 					dv.doc.crlf ? "CRLF" : "LF"
 				]

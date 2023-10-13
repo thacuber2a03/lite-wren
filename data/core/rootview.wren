@@ -11,7 +11,7 @@ class EmptyView is View {
   construct new() { super() }
 
   draw_text(x, y, color) {
-    var th = Style.big_font.get_height()
+    var th = Style.big_font.height
     var dh = th + Style.padding.y * 2
     x = Renderer.draw_text(Style.big_font, "lite", x, y + (dh - th) / 2, color)
     x = x + Style.padding.x
@@ -20,7 +20,7 @@ class EmptyView is View {
       { "fmt": "@ to run a command", "cmd": "core:find-command" },
       { "fmt": "@ to open a file from the project", "cmd": "core:find-file" },
     ]
-    th = Style.font.get_height()
+    th = Style.font.height
     y = y + (dh - th * 2 - Style.padding.y) / 2
     var w = 0
     for (line in lines) {
@@ -252,7 +252,7 @@ class Node {
 
   get_tab_rect(idx) {
     var tw = Style.tab_width.min((_size.x / _views.count).ceil)
-    var h = Style.font.get_height() + Style.padding.y * 2
+    var h = Style.font.height + Style.padding.y * 2
     return Rect.new(_position.x + idx * tw, _position.y, tw, h)
   }
 
@@ -370,7 +370,9 @@ class Node {
       if (_views.count > 1) draw_tabs()
       var pos = _active_view.position
       var size = _active_view.size
-      Core.push_clip_rect(pos.x, pos.y, size.x + pos.x % 1, size.y + pos.y % 1)
+      Core.push_clip_rect(Rect.new(
+        pos.x, pos.y, size.x + pos.x % 1, size.y + pos.y % 1
+      ))
       _active_view.draw()
       Core.pop_clip_rect()
     } else {
@@ -488,7 +490,7 @@ class RootView is View {
   draw() {
     _root_node.draw()
     while (_deferred_draws.count > 0) {
-      var m = _deferred_draws.removeAt(-1)
+      var t = _deferred_draws.removeAt(-1)
       t["fn"].call(t["args"])
     }
   }

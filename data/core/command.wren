@@ -35,14 +35,24 @@ class Command {
 	}
 
 	static prettify_name(name) {
-		// TODO(thacuber2a03): capitalize
-		return name.replace(":", ": ").replace("-", " ")
+		// no gmatch :(
+		var cmd = ""
+		var hadSpace = true
+		for (c in name.replace(":", ": ").replace("-", " ")) {
+			if (hadSpace) {
+				c = String.fromByte(c.bytes[0]-32)
+				hadSpace = false
+			}
+			if (c == " ") hadSpace = true
+			cmd = cmd + c
+		}
+		return cmd
 	}
 
 	static get_all_valid() {
 		var res = []
 		for (entry in Command.map) {
-			if (entry.value["predicate"].call()) res.add(name)
+			if (entry.value["predicate"].call()) res.add(entry.key)
 		}
 		return res
 	}
@@ -50,5 +60,13 @@ class Command {
 	static perform(args) {
 		var res = Core.try(args, Perform)
 		return !res[0] || res[1]
+	}
+
+	static add_defaults() {
+		import "core/commands/core"
+		import "core/commands/root"
+		//import "core/commands/command"
+		//import "core/commands/doc"
+		//import "core/commands/findreplace"
 	}
 }
