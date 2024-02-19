@@ -57,12 +57,13 @@ class Renderer {                                                                
   foreign static draw_text_(font, text, x, y, color)                                         \n\
 }                                                                                            \n\
 \n\
-foreign class Font {                \n\
-  construct load(filename, size) {} \n\
-  foreign set_tab_width(width)      \n\
-  foreign width(text)               \n\
-  foreign height                    \n\
-}                                   \n\
+foreign class Font {                    \n\
+  construct load(filename, size) {}     \n\
+  foreign tab_width=(width)             \n\
+  foreign width_(text)                  \n\
+  width(text) { width_(text.toString) } \n\
+  foreign height                        \n\
+}                                       \n\
 \n\
 foreign class File {                \n\
   construct load(filename, mode) {} \n\

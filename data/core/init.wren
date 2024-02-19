@@ -89,23 +89,26 @@ class Core {
     Renderer.set_clip_rect(rect.x, rect.y, rect.w, rect.h)
   }
 
-  /*
+  static open_doc() {
+    var doc = Doc.new()
+    __docs.add(doc)
+    // Core.log_quiet("Opened new doc")
+    return doc
+  }
+
   static open_doc(filename) {
-    if (filename) {
-      var abs_filename = Program.absolute_path(filename)
-      for (doc in _docs) {
-        if (doc.filename && abs_filename == Program.absolute_path(doc.filename)) {
-          return doc
-        }
+    var abs_filename = Program.absolute_path(filename)
+    for (doc in __docs) {
+      if (doc.filename && abs_filename == Program.absolute_path(doc.filename)) {
+        return doc
       }
     }
 
     var doc = Doc.new(filename)
-    _docs.add(doc)
-    // log_quiet(filename ? "Opened doc %(filename)" : "Opened new doc")
+    __docs.add(doc)
+    // Core.log_quiet("Opened doc %(filename)")
     return doc
   }
-  */
 
   static try(args, fn) {
     var f = Fiber.new(fn)
@@ -217,3 +220,4 @@ import "core/keymap" for Keymap
 import "core/rootview" for RootView
 import "core/statusview" for StatusView
 import "core/commandview" for CommandView
+import "core/doc" for Doc

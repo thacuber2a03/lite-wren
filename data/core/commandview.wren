@@ -28,7 +28,7 @@ class CommandView is DocView {
     _gutter_text_brightness = 0
     _selection_offset = 0
     _state = CommandView.default_state
-    this.font = "font"
+    this.font = Style.font
     this.size.y = 0
     _label = ""
   }
@@ -180,12 +180,12 @@ class CommandView is DocView {
   draw_line_highlight() { /* no-op */ }
 
   draw_line_gutter(idx, p) {
-    var yoffset = get_line_text_y_offset()
+    var yoffset = this.line_text_y_offset
     var pos = this.position
     var color = Common.lerp(Style.text, Style.accent, _gutter_text_brightness / 100)
     Core.push_clip_rect(Rect.new(pos.x, pos.y, this.gutter_width, this.size.y))
     p.x = p.x + Style.padding.x
-    Renderer.draw_text(this.font, _label, x, y + yoffset, color)
+    Renderer.draw_text(this.font, _label, p.x, p.y + yoffset, color)
   }
 
   draw_suggestions_box() {

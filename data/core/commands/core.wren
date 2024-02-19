@@ -10,7 +10,7 @@ var Fullscreen = false
 Command.add(null, {
   "core:quit": Fn.new { Core.quit() },
   "core:force-quit": Fn.new { Core.quit(true) },
-  
+
   "core:toggle-fullscreen": Fn.new {
     Fullscreen = !Fullscreen
     Program.set_window_mode(Fullscreen ? "fullscreen" : "normal")
@@ -32,5 +32,9 @@ Command.add(null, {
       }
       return res
     })
-  }
+  },
+
+  "core:new-doc": Fn.new {
+    Core.root_view.open_doc(Core.open_doc())
+  },
 })

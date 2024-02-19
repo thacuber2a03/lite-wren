@@ -300,7 +300,7 @@ static void f_absolute_path(WrenVM* vm) {
 
 static void f_get_file_info(WrenVM* vm)
 {
-  const char* path = checkstring(vm, 0);
+  const char* path = checkstring(vm, 1);
 
   struct stat s;
   int err = stat(path, &s);

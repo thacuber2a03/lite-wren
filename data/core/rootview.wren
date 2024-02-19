@@ -100,7 +100,7 @@ class Node {
   consume(node) {
     _type = node.type
     _position = node.position
-    //_size = node.size
+    _size = node.size
     _views = node.views
     _divider = node.divider
     _locked = node.locked
@@ -278,7 +278,7 @@ class Node {
         return Vector.new(p1.x + p2.x + dsx, p1.y + p2.y + dsy)
       }
     }
-    return Vector.new(null, null) // yeah, this is valid
+    return Vector.new(null, null) // yeah, this is weird
   }
 
   calc_split_sizes_(x, y, x1, x2) {
@@ -409,9 +409,9 @@ class RootView is View {
       node = get_active_node()
     }
     Common.assert(!node.locked, "Cannot open doc on locked node")
-    for (i in 0..._views.count) {
-      var view = _views[i]
-      if (view.doc == doc) {
+    for (i in 0...node.views.count) {
+      var view = node.views[i]
+      if (view is DocView && view.doc == doc) {
         node.set_active_view(node.views[i])
         return view
       }
@@ -419,7 +419,8 @@ class RootView is View {
     var view = DocView.new(doc)
     node.add_view(view)
     _root_node.update_layout()
-    view.scroll_to_line(view.doc.get_selection(), true, true)
+    var sel = view.doc.get_selection()
+    view.scroll_to_line(sel[0].line, true, true)
     return view
   }
 

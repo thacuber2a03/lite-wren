@@ -255,12 +255,23 @@ int main(int argc, char **argv) {
   wrenSetSlotDouble(vm, 0, get_scale());
   SCALE = wrenGetSlotHandle(vm, 0);
 
+  int exit_code = EXIT_SUCCESS;
+
   /* compile prelude */
-  wrenInterpret(vm, "prelude",
+  WrenInterpretResult res = wrenInterpret(vm, "prelude",
     "import \"core\" for Core\n"
     "Core.init()\n"
     "Core.run()\n"
   );
+
+  switch (res) {
+    case WREN_RESULT_COMPILE_ERROR:
+    case WREN_RESULT_RUNTIME_ERROR:
+      exit_code = EXIT_FAILURE;
+      break;
+
+    default: break;
+  }
 
   /* end program */
   wrenReleaseHandle(vm, ARGS);
@@ -270,5 +281,5 @@ int main(int argc, char **argv) {
   wrenFreeVM(vm);
   SDL_DestroyWindow(window);
 
-  return EXIT_SUCCESS;
+  return exit_code;
 }

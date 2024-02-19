@@ -1,5 +1,6 @@
-import "api" for File
+import "api" for Program, File
 import "core/common" for Common
+import "core/config" for Config
 
 class Position {
   construct new() {
@@ -14,6 +15,21 @@ class Position {
     _offset = 0
   }
 
+  <(other) {
+    Common.assert(other is Position, "Can't compare with non-position")
+    return other.line < line || other.line == line && other.col < col
+  }
+
+  >(other) {
+    Common.assert(other is Position, "Can't compare with non-position")
+    return other.line > line || other.line == line && other.col >= col
+  }
+
+  ==(other) {
+    Common.assert(other is Position, "Can't compare with non-position")
+    return other.line == line && other.col == col
+  }
+
   line { _line }
   col { _col }
   offset { _offset }
@@ -23,7 +39,22 @@ class Position {
   offset=(v) { _offset }
 }
 
+// [0, 1, 2, 3]
+
 class Doc {
+  splice(at, remove) { splice(at, remove, []) }
+  splice(at, remove, insert) {
+    var offset = insert.count - remove
+    var old_len = _lines.count
+    if (offset > 0) {
+      _lines = _lines + List.filled(offset, 0)
+      for (i in at...old_len) _lines[i+offset] = _lines[i]
+    }
+    for (i in 0...insert.count) {
+      _lines[at + i - 1] = insert[i]
+    }
+  }
+
   construct new(filename) { load(filename) }
   construct new() { reset() }
 
@@ -81,7 +112,16 @@ class Doc {
 
   change_id { _undo_stack.count }
 
-  set_selection(pos, swap) { set_selection(pos, pos, swap) }
+  set_selection(pos) {
+    if (pos is List) return set_selection(pos[0], pos[1], false)
+    return set_selection(pos, pos, false)
+  }
+
+  set_selection(pos, swap) {
+    if (pos is List) return set_selection(pos[0], pos[1], false)
+    if (swap is Bool) return set_selection(pos, pos, swap)
+    return set_selection(pos1, pos2, false)
+  }
 
   set_selection(pos1, pos2, swap) {
     if (swap) {
@@ -94,9 +134,7 @@ class Doc {
   }
 
   sort_positions(pos1, pos2) {
-    if (pos1.line > pos2.line || pos1.line == pos2.line && pos1.col > pos2.col) {
-      return [pos2, pos1, true]
-    }
+    if (pos2 > pos1) return [pos2, pos1, true]
     return [pos1, pos2, false]
   }
 
@@ -109,11 +147,48 @@ class Doc {
     return [a, b]
   }
 
+  has_selection {
+    var a = _selection[0]
+    var b = _selection[1]
+    return !(a.line == b.line && a.col == b.col)
+  }
+
+  sanitize_selection() { set_selection(get_selection()) }
+
   sanitize_position(pos) {
     pos.line = pos.line.clamp(0, _lines.count-1)
     return Position.new(
       pos.line, pos.col.clamp(0, _lines[pos.line].count-1)
     )
+  }
+
+  position_offset(pos, rest) {
+    var other = rest[0]
+    if (other is Fn) {
+      // func offset
+      pos = sanitize_position(pos)
+      return other.call(this, pos, rest)
+    }
+
+    if (other is Position) {
+      return sanitize_position(Position.new(
+        pos.line + other.line,
+        pos.col + other.col
+      ))
+    }
+
+    // byte offset
+    pos = sanitize_position(pos)
+    pos.col = pos.col + other
+    while (pos.line > 1 && pos.col < 1) {
+      pos.line = pos.line - 1
+      pos.col = pos.col + _lines[pos.line].count
+    }
+    while (pos.line < _lines.count && pos.col > _lines[pos.line].count) {
+      pos.col = pos.col - _lines[pos.line].count
+      pos.line = pos.line + 1
+    }
+    return sanitize_position(pos)
   }
 
   get_text(pos1, pos2) {
@@ -136,19 +211,53 @@ class Doc {
     return _lines[pos.line][pos.col]
   }
 
-  raw_insert(pos, text, undo_stack, time) {
+  push_undo_(undo_stack, time, type, rest) {
+    undo_stack.add({
+      "type": type,
+      "time": time,
+      "rest": rest
+    })
+    if (undo_stack.count > Config.max_undos) undo_stack.removeAt(0)
+  }
+
+  pop_undo_(undo_stack, redo_stack) {
+    var cmd = undo_stack[-1]
+    if (!cmd) return
+    undo_stack.removeAt(-1)
+
+    var type = cmd["type"]
+    var rest = cmd["rest"]
+    var time = cmd["time"]
+    if (type == "insert") {
+      raw_insert_(rest[0], rest[1], redo_stack, time)
+    } else if (type == "remove") {
+      raw_remove_(rest[0], rest[1], redo_stack, time)
+    } else if (type == "selection") {
+      _selection[0] = rest[0]
+      _selection[1] = rest[1]
+    }
+
+    // if next undo command is within the merge timeout then treat as a single
+    // command and continue to execute it
+    var next = undo_stack[-1]
+    if (next && (time - next["time"]).abs < Config.undo_merge_timeout) {
+      return pop_undo_(undo_stack, redo_stack)
+    }
+  }
+
+  raw_insert_(pos, text, undo_stack, time) {
     var lines = text.split("\n")
-    var before = _lines[pos.line][0...pos.col-1]
-    var after = _line[pos.line][pos.col...]
-    for (i in 0..._lines-1) lines[i] = lines[i] + "\n"
+    var before = _lines[pos.line-1][0...pos.col-1]
+    var after = _lines[pos.line-1][pos.col-1..-1]
+    lines.map { |v| v + "\n" }
     lines[0] = before + lines[0]
     lines[-1] = lines[-1] + after
 
-    splice(_lines, line, 1, lines)
+    splice(pos.line, 0, lines)
 
-    var pos2 = position_offset(pos, text.count)
-    push_undo(undo_stack, time, "selection", get_selection())
-    push_undo(undo_stack, time, "remove", [pos, pos2])
+    var pos2 = position_offset(pos, [text.count])
+    push_undo_(undo_stack, time, "selection", get_selection())
+    push_undo_(undo_stack, time, "remove", [pos, pos2])
 
     sanitize_selection()
   }
@@ -156,13 +265,18 @@ class Doc {
   insert(pos, text) {
     _redo_stack = []
     pos = sanitize_position(pos)
-    raw_insert(pos, text, _undo_stack, Program.get_time())
+    raw_insert_(pos, text, _undo_stack, Program.get_time())
   }
 
   text_input(text) {
     if (this.has_selection) delete_to()
-    var pos = get_selection()
-    insert(pos, text)
-    move_to(text.count)
+    var sel = get_selection()
+    insert(sel[0], text)
+    move_to([text.count])
+  }
+
+  move_to(args) {
+    var sel = get_selection()
+    set_selection(position_offset(sel[0], args))
   }
 }

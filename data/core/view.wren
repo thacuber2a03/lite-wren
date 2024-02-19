@@ -21,6 +21,7 @@ class View {
   size { _size }
   scroll { _scroll }
   cursor { _cursor }
+  cursor=(v) { _cursor }
   scrollable { _scrollable }
 
   move_towards(v, dest) { move_towards(v, dest, 0.5) }

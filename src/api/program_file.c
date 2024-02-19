@@ -73,8 +73,8 @@ void f_seek(WrenVM* vm)
 {
   FILE** self = (FILE**)wrenGetSlotForeign(vm, 0);
   checkfile(self, "seek through a");
-  size_t offset = (size_t)checkdouble(vm, 1);
-  int opt = checkoption(vm, 2, "cur", seek_opts);
+  int opt = checkoption(vm, 1, "cur", seek_opts);
+  size_t offset = (size_t)checkdouble(vm, 2);
   if (opt == -1) return;
   switch (opt)
   {
@@ -94,25 +94,22 @@ void f_tell(WrenVM* vm)
 
 #undef checkfile
 
-#define closefile(fpp)    \
-  do {                    \
-    if (*(fpp) != NULL) { \
-      fclose(*(fpp));     \
-      *(fpp) = NULL;      \
-    }                     \
+#define closefile(fpp) \
+  do {                 \
+    if (fpp != NULL) { \
+      fclose(fpp);     \
+      fpp = NULL;      \
+    }                  \
   } while(0)
 
 void f_close(WrenVM* vm)
 {
   FILE** self = (FILE**)wrenGetSlotForeign(vm, 0);
   if (!*self) { throwerror(vm, "File is already closed"); return; }
-  closefile(self);
+  closefile(*self);
 }
 
-void file_finalize(void* data)
-{
-  closefile((FILE**) data);
-}
+void file_finalize(void* data) { closefile(data); }
 
 WrenForeignClassMethods file_foreign_class(WrenVM* vm)
 {
