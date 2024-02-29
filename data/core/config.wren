@@ -14,7 +14,7 @@ class Config {
   static max_undos                  { __max_undos }
   static max_undos=(v)              { __max_undos = v }
   static highlight_current_line     { __highlight_current_line }
-  static highlight_current_line=(v) { __highlight_current_line }
+  static highlight_current_line=(v) { __highlight_current_line = v }
   static line_height                { __line_height }
   static line_height=(v)            { __line_height = v }
   static indent_size                { __indent_size }

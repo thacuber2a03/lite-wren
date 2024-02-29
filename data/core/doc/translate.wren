@@ -1,10 +1,29 @@
 import "core/config" for Config
+import "core/common" for Common
 
 class Translate {
   static is_non_word(char) {
     // TODO(thacuber2a03): not everything is a word
     return false
   }
+
+  static previous_char { Fn.new { |doc, pos, rest|
+    var loop = true
+    while (loop) {
+      pos = doc.position_offset(pos, [-1])
+      loop = Common.is_utf8_cont(doc.get_char(pos))
+    }
+    return pos
+  } }
+
+  static next_char { Fn.new { |doc, pos, rest|
+    var loop = true
+    while (loop) {
+      pos = doc.position_offset(pos, [1])
+      loop = Common.is_utf8_cont(doc.get_char(pos))
+    }
+    return pos
+  } }
 
   static start_of_word(doc, pos) {
     while (true) {

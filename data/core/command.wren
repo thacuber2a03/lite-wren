@@ -20,7 +20,10 @@ class Command {
 
 	static add(predicate, map) {
 		predicate = predicate || Always_true
-		// string predicates are unsupported
+		if (predicate is String) {
+			Fiber.abort("String predicates are unsupported")
+		}
+
 		if (predicate is Class) {
 			var klass = predicate
 			predicate = Fn.new { Core.active_view is klass }
@@ -66,7 +69,7 @@ class Command {
 		import "core/commands/core"
 		import "core/commands/root"
 		//import "core/commands/command"
-		//import "core/commands/doc"
+		import "core/commands/doc"
 		//import "core/commands/findreplace"
 	}
 }

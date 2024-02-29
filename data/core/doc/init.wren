@@ -34,9 +34,15 @@ class Position {
   col { _col }
   offset { _offset }
 
-  line=(v) { _line }
-  col=(v) { _col }
-  offset=(v) { _offset }
+  line=(v) { _line = v }
+  col=(v) { _col = v }
+  offset=(v) { _offset = v }
+
+  toString {
+    var s = "[line %(line), col %(col)]"
+    if (offset != 0) s = s + " (offset %(offset))"
+    return s
+  }
 }
 
 // [0, 1, 2, 3]
@@ -173,11 +179,11 @@ class Doc {
     // byte offset
     pos = sanitize_position(pos)
     pos.col = pos.col + other
-    while (pos.line > 1 && pos.col < 1) {
+    while (pos.line > 0 && pos.col < 0) {
       pos.line = pos.line - 1
       pos.col = pos.col + _lines[pos.line].count
     }
-    while (pos.line < _lines.count && pos.col > _lines[pos.line].count) {
+    while (pos.line < _lines.count-1 && pos.col > _lines[pos.line].count-1) {
       pos.col = pos.col - _lines[pos.line].count
       pos.line = pos.line + 1
     }
@@ -263,8 +269,7 @@ class Doc {
 
   text_input(text) {
     if (this.has_selection) delete_to()
-    var sel = get_selection()
-    insert(sel[0], text)
+    insert(get_selection()[0], text)
     move_to([text.count])
   }
 

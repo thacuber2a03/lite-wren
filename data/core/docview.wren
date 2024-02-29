@@ -130,6 +130,8 @@ class DocView is View {
     }
   }
 
+  scroll_to_make_visible(p) { scroll_to_make_visible(p.line, p.col) }
+
   scroll_to_make_visible(line, col) {
     var min = this.line_height * (line - 1)
     var max = this.line_height * (line + 2) - this.size.y
@@ -201,7 +203,34 @@ class DocView is View {
     }
   }
 
-  on_text_input(text) { _doc.text_input(text) }
+  on_mouse_released(button, mousePos) {
+    super.on_mouse_released(button, mousePos)
+    _mouse_selecting = null
+  }
+
+  on_text_input(text) { this.doc.text_input(text) }
+
+  update() {
+    var sel = this.doc.get_selection()[0]
+    if (sel != _last_sel && this.size.x > 0) {
+      if (Core.active_view == this) scroll_to_make_visible(sel)
+      _blink_timer = 0
+      _last_sel = sel
+    }
+
+    if (this == Core.active_view && !_mouse_selecting) {
+      var n = __blink_period / 2
+      var prev = _blink_timer
+      _blink_timer = (_blink_timer + 1 / Config.fps) % __blink_period
+      if ((_blink_timer > n) != (prev > n)) Core.redraw = true
+    }
+
+    super.update()
+  }
+
+  draw_line_highlight(x, y) {
+    Renderer.draw_rect(x, y, this.size.x, this.line_height, Style.line_highlight)
+  }
 
   draw_line_text(idx, p) {
     var t = Vector.new(p.x, p.y + this.line_text_y_offset)
@@ -209,11 +238,12 @@ class DocView is View {
     t.x = Renderer.draw_text(font, _doc.lines[idx], t.x, t.y, Style.text)
   }
 
-  draw_line_body(idx, p) {
-    var caret = doc.get_selection()
-    caret = caret[0]
+  draw_line_body(idx, x, y) { draw_line_body(idx, Vector.new(x, y)) }
 
-    var line = doc.get_selection()
+  draw_line_body(idx, p) {
+    var caret = doc.get_selection()[0]
+
+    var line = doc.get_selection(true)
     if (idx >= line[0].line && idx <= line[1].line) {
       var text = _doc.lines[idx]
       if (line[0].line != idx) line[0].col = 1
@@ -224,8 +254,8 @@ class DocView is View {
       Renderer.draw_rect(x1, p.y, x2 - x1, lh, Style.selection)
     }
 
-    if (Config.highlight_current_line && !_doc.has_selection && caret.line == idx && Core.active_view == this) {
-      draw_line_highlight(p.x + this.scroll.x, p.y)
+    if (Config.highlight_current_line && !doc.has_selection && caret.line == idx && Core.active_view == this) {
+      draw_line_highlight(p.x + this.scroll[0].x, p.y)
     }
 
     draw_line_text(idx, p)
@@ -236,6 +266,8 @@ class DocView is View {
       Renderer.draw_rect(x1, p.y, Style.caret_width, lh, Style.caret)
     }
   }
+
+  draw_line_gutter(idx, x, y) { draw_line_gutter(idx, Vector.new(x, y)) }
 
   draw_line_gutter(idx, p) {
     var color = Style.line_number
@@ -258,19 +290,17 @@ class DocView is View {
     var y = line_screen_position(range[0]).y
     var x = this.position.x
     for (i in range[0]...range[1]) {
-      draw_line_gutter(i, Vector.new(x, y))
+      draw_line_gutter(i, x, y)
       y = y + lh
     }
 
     var line_pos = line_screen_position(range[0])
-    x = line_pos.x
-    y = line_pos.y
     var gw = this.gutter_width
     var pos = this.position
-    Core.push_clip_rect(Rect.new(pos.x + gw, pos.y, this.size.x, this.size.y))
+    Core.push_clip_rect(pos.x + gw, pos.y, this.size.x, this.size.y)
     for (i in range[0]...range[1]) {
-      draw_line_body(i, Vector.new(x, y))
-      y = y + lh
+      draw_line_body(i, line_pos)
+      line_pos.y = line_pos.y + lh
     }
     Core.pop_clip_rect()
 

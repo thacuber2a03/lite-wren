@@ -1,6 +1,11 @@
 import "api" for Renderer, Program
 
 class Common {
+	static is_utf8_cont(char) {
+		var byte = char.bytes[0]
+		return byte >= 0x80 && byte < 0xc0
+	}
+
 	static lerp(a, b, t) {
 		if (!(a is List)) return a + (b-a) * t
 		var res = []
