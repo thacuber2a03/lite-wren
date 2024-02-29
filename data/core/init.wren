@@ -67,6 +67,8 @@ class Core {
     }
   }
 
+  static push_clip_rect(x, y, w, h) { push_clip_rect(Rect.new(x, y, w, h)) }
+
   static push_clip_rect(rect) {
     var rect2 = __clip_rect_stack[-1]
     var r = rect.x + rect.w

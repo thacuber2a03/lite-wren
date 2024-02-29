@@ -44,15 +44,8 @@ class Position {
 class Doc {
   splice(at, remove) { splice(at, remove, []) }
   splice(at, remove, insert) {
-    var offset = insert.count - remove
-    var old_len = _lines.count
-    if (offset > 0) {
-      _lines = _lines + List.filled(offset, 0)
-      for (i in at...old_len) _lines[i+offset] = _lines[i]
-    }
-    for (i in 0...insert.count) {
-      _lines[at + i - 1] = insert[i]
-    }
+    while (remove > 0) _lines.removeAt(at)
+    _lines = _lines[0...at] + insert + _lines[at...-1]
   }
 
   construct new(filename) { load(filename) }

@@ -23,6 +23,7 @@ class View {
   cursor { _cursor }
   cursor=(v) { _cursor }
   scrollable { _scrollable }
+  scrollable=(v) { _scrollable = v }
 
   move_towards(v, dest) { move_towards(v, dest, 0.5) }
 

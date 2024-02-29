@@ -13,7 +13,7 @@ class DocView is View {
   construct new(doc) {
     super()
     this.cursor = "ibeam"
-    _scrollable = true
+    this.scrollable = true
     _doc = Common.assert(doc)
     _font = Style.code_font
     _last_x_offset = Position.new()
@@ -21,6 +21,7 @@ class DocView is View {
     __blink_period = 0.8
   }
 
+  font { _font }
   font=(v) { _font = v }
   doc { _doc }
 
@@ -63,8 +64,6 @@ class DocView is View {
   }
 
   scrollable_size { line_height * (_doc.lines.count - 1) + this.size.y }
-
-  font { _font }
 
   line_height { (this.font.height * Config.line_height).floor }
 

@@ -94,9 +94,9 @@ class CommandView is DocView {
     submit.call(text, suggestion)
   }
 
-  enter(text, submit) { enter(text, submit, null) }
+  enter(text, submit) { enter(text, submit, Noop) }
 
-  enter(text, submit, suggest) { enter(text, submit, suggest, null) }
+  enter(text, submit, suggest) { enter(text, submit, suggest, Noop) }
 
   enter(text, submit, suggest, cancel) {
     if (_state != CommandView.default_state) return
@@ -186,6 +186,7 @@ class CommandView is DocView {
     Core.push_clip_rect(Rect.new(pos.x, pos.y, this.gutter_width, this.size.y))
     p.x = p.x + Style.padding.x
     Renderer.draw_text(this.font, _label, p.x, p.y + yoffset, color)
+    Core.pop_clip_rect()
   }
 
   draw_suggestions_box() {
@@ -223,6 +224,8 @@ class CommandView is DocView {
 
   draw() {
     super.draw()
-    Core.root_view.defer_draw(null) { |a| draw_suggestions_box() }
+    Core.root_view.defer_draw(null) { |a|
+      draw_suggestions_box()
+    }
   }
 }
