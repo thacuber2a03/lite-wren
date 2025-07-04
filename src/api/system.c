@@ -471,7 +471,7 @@ static void f_get_exename(WrenVM *vm)
 WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool isStatic, const char *signature)
 {
     if (!isStatic)
-        return NULL; // no class here is foreign yet
+        return NULL;
 
     if (!strcmp(className, "Clock"))
     {

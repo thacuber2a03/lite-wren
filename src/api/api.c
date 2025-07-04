@@ -53,13 +53,15 @@ WrenForeignMethodFn apiBindForeignMethods(WrenVM *vm, const char *module, const 
 
 const char *system_source = "class Program {\n"
                             "    foreign static scale\n"
-                            "    static pathSep { \""
+                            ""
+                            "    static pathSep { \"" // sorry not sorry
 #ifdef _WIN32
                             "\\"
 #else
                             "/"
 #endif
                             "\" }\n"
+                            ""
                             "    foreign static platform\n"
                             "    foreign static executableName\n"
                             "}\n"
@@ -107,3 +109,29 @@ const char *system_source = "class Program {\n"
                             "    foreign static fuzzyMatch(needle, haystack)\n"
                             "}\n";
 
+const char *renderer_source =
+    "class Renderer {\n"
+    "    foreign static debug=(v)\n"
+    "    foreign static size\n"
+    "    foreign static beginFrame()\n"
+    "    foreign static endFrame()\n"
+    "\n"
+    "    static clip=(v) { Renderer.clipRect = v }\n"
+    "    static clipRect=(v) { setClipRect(v[0], v[1], v[2], v[3]) }\n"
+    "    foreign static setClipRect(x,y,w,h)\n"
+    "\n"
+    "    static checkColor_(c) {\n"
+    "        if (!(c is List) || c.count != 3 || c.count != 4) {\n"
+    "            Fiber.abort(\"expected a list of 3 or 4 parameters for a color\")\n"
+    "        }\n"
+    "        return c\n"
+    "    }\n"
+    "\n"
+    "    static drawText(font, text, x, y, color) { drawText_(font, text, x, y, checkColor_(color)) }\n"
+    "    static drawText(font, text, x, y) { drawText_(font, text, x, y, List.filled(4,255)) }\n"
+    "    foreign static drawText_(font, text, x, y, color)\n"
+    "\n"
+    "    static drawRect(x, y, w, h, color) { drawRect_(x, y, w, h, checkColor_(color)) }\n"
+    "    static drawRect(x, y, w, h) { drawRect_(x, y, w, h, List.filled(4,255)) }\n"
+    "    foreign static drawRect_(x,y,w,h)\n"
+    "}\n";
