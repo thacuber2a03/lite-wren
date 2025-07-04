@@ -388,6 +388,12 @@ static void f_args(WrenVM *vm)
     wrenSetSlotHandle(vm, 0, api_context.args);
 }
 
+static void f_exit(WrenVM *vm)
+{
+    exit(wrenGetSlotDouble(vm, 1));
+    RETURN_NULL(vm);
+}
+
 static void f_fuzzy_match(WrenVM *vm)
 {
     const char *str = wrenGetSlotString(vm, 1);
@@ -470,9 +476,6 @@ static void f_get_exename(WrenVM *vm)
 
 WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool isStatic, const char *signature)
 {
-    if (!isStatic)
-        return NULL;
-
     if (!strcmp(className, "Clock"))
     {
         if (!strcmp(signature, "now"))
@@ -482,9 +485,9 @@ WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool
     }
     else if (!strcmp(className, "Events"))
     {
-        if (!strcmp(className, "poll"))
+        if (!strcmp(signature, "poll"))
             return f_poll_event;
-        else if (!strcmp(className, "wait"))
+        else if (!strcmp(signature, "wait(_)"))
             return f_wait_event;
     }
     else if (!strcmp(className, "Window"))
@@ -506,42 +509,44 @@ WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool
     {
         if (!strcmp(signature, "list(_)"))
             return f_list_dir;
-        if (!strcmp(signature, "chdir(_)"))
+        else if (!strcmp(signature, "chdir(_)"))
             return f_chdir;
-        if (!strcmp(signature, "abs(_)"))
+        else if (!strcmp(signature, "abs(_)"))
             return f_absolute_path;
-        if (!strcmp(signature, "info(_)"))
+        else if (!strcmp(signature, "info(_)"))
             return f_get_file_info;
     }
     else if (!strcmp(className, "Process"))
     {
         if (!strcmp(signature, "exec(_)"))
             return f_exec;
-        if (!strcmp(signature, "args"))
+        else if (!strcmp(signature, "args"))
             return f_args;
+        else if (!strcmp(signature, "exit(_)"))
+            return f_exit;
     }
     else if (!strcmp(className, "Program"))
     {
         if (!strcmp(signature, "version"))
             return f_get_version;
-        if (!strcmp(signature, "scale"))
+        else if (!strcmp(signature, "scale"))
             return f_get_scale;
-        if (!strcmp(signature, "platform"))
+        else if (!strcmp(signature, "platform"))
             return f_get_platform;
-        if (!strcmp(signature, "executableName"))
+        else if (!strcmp(signature, "executableName"))
             return f_get_exename;
-    }
-    else if (!strcmp(className, "Clipboard"))
-    {
-        if (!strcmp(signature, "get"))
+        else if (!strcmp(signature, "clipboard"))
             return f_get_clipboard;
-        if (!strcmp(signature, "set(_)"))
+        else if (!strcmp(signature, "clipboard=(_)"))
             return f_set_clipboard;
     }
     else if (!(strcmp(className, "Text") && strcmp(signature, "fuzzyMatch(_,_)")))
     {
         return f_fuzzy_match;
     }
+
+    if (!isStatic)
+        return NULL;
 
     return NULL;
 }

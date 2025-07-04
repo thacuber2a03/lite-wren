@@ -1,6 +1,7 @@
 #include "api/api.h"
 #include "renderer.h"
 #include <SDL2/SDL.h>
+#include <errno.h>
 #include <stdio.h>
 
 #ifdef _WIN32
@@ -24,6 +25,110 @@ static void init_window_icon(void)
     SDL_SetWindowIcon(window, surf);
     SDL_FreeSurface(surf);
 #endif
+}
+
+static void writeFn(WrenVM *vm, const char *text)
+{
+    printf("%s", text);
+}
+
+static void errorFn(WrenVM *vm, WrenErrorType type, const char *module, int line, const char *message)
+{
+    switch (type)
+    {
+    case WREN_ERROR_STACK_TRACE:
+    case WREN_ERROR_COMPILE:
+        fprintf(stderr, "[at module %s, line %i] %s\n", module, line, message);
+        break;
+    case WREN_ERROR_RUNTIME:
+        fprintf(stderr, "%s\n", message);
+        break;
+    }
+}
+
+void onCompleteLoadModule(WrenVM *vm, const char *name, struct WrenLoadModuleResult result)
+{
+    if (strcmp(name, "renderer") && strcmp(name, "system"))
+    {
+        free((char *)result.source);
+    }
+}
+
+static void die(void)
+{
+    fprintf(stderr, "fatal error: %s\n", strerror(errno));
+    exit(-1);
+}
+
+static WrenLoadModuleResult loadModuleFn(WrenVM *vm, const char *name)
+{
+    WrenLoadModuleResult res;
+    res.onComplete = onCompleteLoadModule;
+    res.source = NULL;
+    res.userData = NULL;
+
+    if (!strcmp(name, "renderer"))
+        res.source = renderer_source;
+    else if (!strcmp(name, "system"))
+        res.source = system_source;
+    else
+    {
+        int namelen = strlen(name);
+        char *filepath = malloc(sizeof "data/.wren" - 1 + namelen + 1);
+        if (!filepath)
+            die();
+
+        filepath[0] = '\0';
+        strcat(filepath, "data/");
+        strcat(filepath, name);
+        strcat(filepath, ".wren");
+        filepath[strlen(filepath)] = '\0';
+
+        FILE *fp = fopen(filepath, "rb");
+        if (!fp)
+        {
+            void *ptr = realloc(filepath, sizeof "data//init.wren" - 1 + namelen + 1);
+            if (!ptr)
+            {
+                free(filepath);
+                die();
+            }
+            filepath = ptr;
+
+            filepath[0] = '\0';
+            strcat(filepath, "data/");
+            strcat(filepath, name);
+            strcat(filepath, "/init.wren");
+            filepath[strlen(filepath)] = '\0';
+
+            fp = fopen(filepath, "rb");
+            if (!fp)
+            {
+                free(filepath);
+                return res;
+            }
+        }
+
+        free(filepath);
+
+        fseek(fp, 0, SEEK_END);
+        int size = ftell(fp);
+        rewind(fp);
+
+        char *source = malloc(size + 1);
+        if (fread(source, 1, size + 1, fp) != size)
+        {
+            free(source);
+            fclose(fp);
+            die();
+        }
+
+        source[size - 1] = '\0';
+        res.source = source;
+        fclose(fp);
+    }
+
+    return res;
 }
 
 int main(int argc, char **argv)
@@ -57,6 +162,10 @@ int main(int argc, char **argv)
     WrenConfiguration config;
     wrenInitConfiguration(&config);
     config.bindForeignMethodFn = apiBindForeignMethods;
+    config.bindForeignClassFn = apiBindForeignClasses;
+    config.writeFn = writeFn;
+    config.errorFn = errorFn;
+    config.loadModuleFn = loadModuleFn;
     WrenVM *vm = wrenNewVM(&config);
 
     wrenEnsureSlots(vm, 2);
@@ -68,9 +177,19 @@ int main(int argc, char **argv)
     }
     api_context.args = wrenGetSlotHandle(vm, 0);
 
-    fprintf(stderr, "%s\n", system_source);
-
+    // TODO(thacuber2a03): okay honestly this just sucks
     (void)wrenInterpret(vm, "prelude",
+                        "// import \"system\" for Program\n"
+                        "import \"core\" for Core\n"
+                        "\n"
+                        "var core = Core.new()\n"
+                        "var res = Fiber.new { core.run() }.try()\n"
+                        "\n"
+                        "if (res is String) {\n"
+                        "	System.print(\"Error: \" + res.toString)\n"
+                        "	Fiber.new { core.onError() }.try()\n"
+                        "}\n"
+                        /*
                         "local core\n"
                         "xpcall(function()\n"
                         "  SCALE = tonumber(os.getenv(\"LITE_SCALE\")) or SCALE\n"
@@ -89,6 +208,9 @@ int main(int argc, char **argv)
                         "  end\n"
                         "  os.exit(1)\n"
                         "end)");
+                        */
+
+    );
 
     SDL_DestroyWindow(window);
     wrenReleaseHandle(vm, api_context.args);

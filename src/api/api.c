@@ -17,6 +17,8 @@ const char *system_source = "class Program {\n"
                             ""
                             "    foreign static platform\n"
                             "    foreign static executableName\n"
+                            "    foreign static clipboard\n"
+                            "    foreign static clipboard=(s)\n"
                             "}\n"
                             "\n"
                             "class Clock {\n"
@@ -26,7 +28,7 @@ const char *system_source = "class Program {\n"
                             "\n"
                             "class Events {\n"
                             "    foreign static poll\n"
-                            "    foreign static wait\n"
+                            "    foreign static wait(timeout)\n"
                             "}\n"
                             "\n"
                             "class Window {\n"
@@ -47,15 +49,11 @@ const char *system_source = "class Program {\n"
                             "    foreign static info(path)\n"
                             "}\n"
                             "\n"
-                            "class Clipboard {\n"
-                            "    foreign static get()\n"
-                            "    foreign static set(s)\n"
-                            "}\n"
-                            "\n"
-                            "\n"
                             "class Process {\n"
                             "    foreign static exec(cmd)\n"
                             "    foreign static args\n"
+                            "    foreign static exit(code)\n"
+                            "    static exit() { exit(0) }\n"
                             "}\n"
                             "\n"
                             "class Text {\n"
@@ -86,7 +84,7 @@ const char *renderer_source =
     "\n"
     "    static drawRect(x, y, w, h, color) { drawRect_(x, y, w, h, checkColor_(color)) }\n"
     "    static drawRect(x, y, w, h) { drawRect_(x, y, w, h, List.filled(4,255)) }\n"
-    "    foreign static drawRect_(x,y,w,h)\n"
+    "    foreign static drawRect_(x,y,w,h,color)\n"
     "}\n"
     "\n"
     "foreign class Font {\n"
@@ -138,9 +136,9 @@ WrenForeignClassMethods apiCreateFontForeign(WrenVM *vm);
 WrenForeignMethodFn apiBindForeignMethods(WrenVM *vm, const char *module, const char *className, bool isStatic,
                                           const char *signature)
 {
-    if (strcmp(module, "renderer"))
+    if (!strcmp(module, "renderer"))
         return apiBindRendererMethods(vm, className, isStatic, signature);
-    if (strcmp(module, "system"))
+    if (!strcmp(module, "system"))
         return apiBindSystemMethods(vm, className, isStatic, signature);
     return NULL;
 }
