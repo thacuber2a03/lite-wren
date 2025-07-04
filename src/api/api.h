@@ -4,9 +4,9 @@
 #include "lib/wren/wren.h"
 
 extern const char *system_source;
-extern struct APIContext api_context;
+extern const char *renderer_source;
 
-#define API_TYPE_FONT "Font"
+extern struct APIContext api_context;
 
 #define RETURN_NUM(vm, n) wrenSetSlotDouble(vm, 0, n)
 #define RETURN_BOOL(vm, b) wrenSetSlotBool(vm, 0, b)
@@ -40,6 +40,8 @@ int apiAuxCheckOption(WrenVM *vm, int argSlot, const char *def, const char *cons
 
 WrenForeignMethodFn apiBindForeignMethods(WrenVM *vm, const char *module, const char *className, bool isStatic,
                                           const char *signature);
+
+WrenForeignClassMethods apiBindForeignClasses(WrenVM *vm, const char *module, const char *className);
 
 #endif
 

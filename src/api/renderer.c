@@ -61,6 +61,8 @@ static void unpackColor(WrenVM *vm, int idx, RenColor *color)
     GET_INDEX(vm, 2, &color->b);
     if (wrenGetListCount(vm, idx) != 4)
         GET_INDEX(vm, 3, &color->a);
+
+#undef GET_INDEX
 }
 
 static void f_draw_rect(WrenVM *vm)
@@ -90,11 +92,13 @@ static void f_draw_text(WrenVM *vm)
 }
 
 WrenForeignMethodFn apiBindRendererFontMethods(WrenVM *vm, bool isStatic, const char *signature);
+WrenForeignClassMethods apiCreateFontForeign(WrenVM *vm);
 
 WrenForeignMethodFn apiBindRendererMethods(WrenVM *vm, const char *className, bool isStatic, const char *signature)
 {
     if (!strcmp(className, "Font"))
         return apiBindRendererFontMethods(vm, isStatic, signature);
+
     if (strcmp(className, "Renderer"))
         return NULL;
     if (!isStatic)

@@ -2,54 +2,7 @@
 #include <string.h>
 
 #include "api.h"
-
-int apiAuxCheckOption(WrenVM *vm, int argSlot, const char *def, const char *const *lst)
-{
-    const char *name = NULL;
-
-    bool missing = (argSlot >= wrenGetSlotCount(vm)) || (wrenGetSlotType(vm, argSlot) == WREN_TYPE_NULL);
-
-    if (missing)
-    {
-        if (def == NULL)
-        {
-            THROW_ERROR(vm, "missing option");
-            return -1;
-        }
-        name = def;
-    }
-    else
-    {
-        if (wrenGetSlotType(vm, argSlot) != WREN_TYPE_STRING)
-        {
-            THROW_ERROR(vm, "option must be a string");
-            return -1;
-        }
-        name = wrenGetSlotString(vm, argSlot);
-    }
-
-    for (int i = 0; lst[i]; i++)
-        if (strcmp(lst[i], name) == 0)
-            return i;
-
-    char buf[128];
-    snprintf(buf, sizeof(buf), "invalid option '%s'", name);
-    THROW_ERROR(vm, buf);
-    return -1;
-}
-
-WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool isStatic, const char *signature);
-WrenForeignMethodFn apiBindRendererMethods(WrenVM *vm, const char *className, bool isStatic, const char *signature);
-
-WrenForeignMethodFn apiBindForeignMethods(WrenVM *vm, const char *module, const char *className, bool isStatic,
-                                          const char *signature)
-{
-    if (strcmp(module, "renderer"))
-        return apiBindRendererMethods(vm, className, isStatic, signature);
-    if (strcmp(module, "system"))
-        return apiBindSystemMethods(vm, className, isStatic, signature);
-    return NULL;
-}
+#include "lib/wren/wren.h"
 
 const char *system_source = "class Program {\n"
                             "    foreign static scale\n"
@@ -134,4 +87,72 @@ const char *renderer_source =
     "    static drawRect(x, y, w, h, color) { drawRect_(x, y, w, h, checkColor_(color)) }\n"
     "    static drawRect(x, y, w, h) { drawRect_(x, y, w, h, List.filled(4,255)) }\n"
     "    foreign static drawRect_(x,y,w,h)\n"
+    "}\n"
+    "\n"
+    "foreign class Font {\n"
+    "    construct new(filename, size) {}\n"
+    "    foreign tabWidth=(w)\n"
+    "    foreign width(text)\n"
+    "    foreign height\n"
     "}\n";
+
+int apiAuxCheckOption(WrenVM *vm, int argSlot, const char *def, const char *const *lst)
+{
+    const char *name = NULL;
+
+    bool missing = (argSlot >= wrenGetSlotCount(vm)) || (wrenGetSlotType(vm, argSlot) == WREN_TYPE_NULL);
+
+    if (missing)
+    {
+        if (def == NULL)
+        {
+            THROW_ERROR(vm, "missing option");
+            return -1;
+        }
+        name = def;
+    }
+    else
+    {
+        if (wrenGetSlotType(vm, argSlot) != WREN_TYPE_STRING)
+        {
+            THROW_ERROR(vm, "option must be a string");
+            return -1;
+        }
+        name = wrenGetSlotString(vm, argSlot);
+    }
+
+    for (int i = 0; lst[i]; i++)
+        if (strcmp(lst[i], name) == 0)
+            return i;
+
+    char buf[128];
+    snprintf(buf, sizeof(buf), "invalid option '%s'", name);
+    THROW_ERROR(vm, buf);
+    return -1;
+}
+
+WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool isStatic, const char *signature);
+WrenForeignMethodFn apiBindRendererMethods(WrenVM *vm, const char *className, bool isStatic, const char *signature);
+WrenForeignClassMethods apiCreateFontForeign(WrenVM *vm);
+
+WrenForeignMethodFn apiBindForeignMethods(WrenVM *vm, const char *module, const char *className, bool isStatic,
+                                          const char *signature)
+{
+    if (strcmp(module, "renderer"))
+        return apiBindRendererMethods(vm, className, isStatic, signature);
+    if (strcmp(module, "system"))
+        return apiBindSystemMethods(vm, className, isStatic, signature);
+    return NULL;
+}
+
+WrenForeignClassMethods apiBindForeignClasses(WrenVM *vm, const char *module, const char *className)
+{
+    if (!(strcmp(module, "renderer") && strcmp(className, "Font")))
+        return apiCreateFontForeign(vm);
+
+    return (WrenForeignClassMethods){
+        .allocate = NULL,
+        .finalize = NULL,
+    };
+}
+
