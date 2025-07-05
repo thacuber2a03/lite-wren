@@ -1,9 +1,20 @@
 import "renderer" for Renderer
 import "system" for Clock, Window, Events, Process
+import "core/config" for Config
+import "core/common" for Common, Vector
 
-class Core {
+class CoreImpl {
 	construct new() {
+		_clipRectStack = []
+	}
 
+	init() {
+		// Renderer.debug = true
+
+		import "core/rootview" for RootView
+		_rootView = RootView.new()
+
+		redraw = true
 	}
 
 	try(f) {
@@ -12,17 +23,31 @@ class Core {
 			f.call()
 		}
 		var res = fib.try()
-		return [!fib.error, res]
+		return [fib.error == null, res]
 	}
 
 	quit() {
 		Process.exit()
 	}
 
+	setActiveView(view) {
+		Common.assert(view, "Tried to set active view to null")
+		if (view != activeView) {
+			lastActiveView = activeView
+			activeView = view
+		}
+	}
+
 	onEvent(type, params) {
 		var didKeymap = true
 		if (type == "quit") {
 			quit()
+		} else if (type == "mousemoved") {
+			_rootView.onMouseMoved(Vector.new(params[0], params[1]), Vector.new(params[2], params[3]))
+		} else if (type == "mousepressed") {
+			_rootView.onMousePressed(params[0], Vector.new(params[1], params[2]), params[3])
+		} else if (type == "mousereleased") {
+			_rootView.onMouseReleased(params[0], Vector.new(params[1], params[2]))
 		}
 		return didKeymap
 	}
@@ -54,24 +79,28 @@ class Core {
 			this.redraw = true
 		}
 
-		if (mouseMoved) {
-			try { onEvent(e[0], e[1..-1]) }
-		}
+		if (mouseMoved) try { onEvent("mousemoved", [mouse["x"], mouse["y"], mouse["dx"], mouse["dy"]]) }
 
+		var size = Renderer.size
+
+		_rootView.size.x = size[0]
+		_rootView.size.y = size[1]
+		_rootView.update()
 		if (!redraw) return false
 		redraw = false
 
-		// var name =
-		// var title = name != "---" ? name + " - lite-wren" : "lite-wren"
-		// if (title != _window_title) {
-		// 	Window.title = title
-		// 	_window_title = title
-		// }
+		var name = activeView.name
+		var title = name != "---" ? "%(name) - lite-wren" : "lite-wren"
+		if (title != _windowTitle) {
+			Window.title = title
+			_windowTitle = title
+		}
 
 		Renderer.beginFrame()
-		Renderer.drawRect(0, 0, 100, 100, [255, 255, 255, 255])
-		// _clip_rect_stack[0] = Rect.new(0, 0, width, height)
-		// Renderer.clip = _clip_rect_stack[0]
+		_clipRectStack.clear()
+		_clipRectStack.add([0, 0, size[0], size[1]])
+		Renderer.clip = _clipRectStack[0]
+		_rootView.draw()
 		Renderer.endFrame()
 
 		return true
@@ -79,12 +108,12 @@ class Core {
 
 	run() {
 		while (true) {
-			_frame_start = Clock.now
+			frameStart = Clock.now
 			var didRedraw = step()
 			// run_threads()
 			if (!(didRedraw || Window.hasFocus)) Events.wait(0.25)
-			var elapsed = Clock.now - _frame_start
-			Clock.sleep(0.max(1/60 /* config.fps */ -elapsed))
+			var elapsed = Clock.now - frameStart
+			Clock.sleep(0.max(1/Config.fps-elapsed))
 		}
 	}
 
@@ -92,6 +121,14 @@ class Core {
 
 	}
 
-	redraw=(v) { _redraw = v }
+	lastActiveView { _lastActiveView }
+	lastActiveView=(v) { _lastActiveView=v }
+	activeView { _activeView }
+	activeView=(v) { _activeView=v }
+	frameStart { _frameStart }
+	frameStart=(v) { _frameStart=v }
 	redraw { _redraw }
+	redraw=(v) { _redraw = v }
 }
+
+var Core = CoreImpl.new()
