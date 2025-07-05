@@ -59,7 +59,7 @@ static void unpackColor(WrenVM *vm, int idx, RenColor *color)
     GET_INDEX(vm, 0, &color->r);
     GET_INDEX(vm, 1, &color->g);
     GET_INDEX(vm, 2, &color->b);
-    if (wrenGetListCount(vm, idx) != 4)
+    if (wrenGetListCount(vm, idx) == 4)
         GET_INDEX(vm, 3, &color->a);
 
 #undef GET_INDEX
@@ -80,14 +80,13 @@ static void f_draw_rect(WrenVM *vm)
 
 static void f_draw_text(WrenVM *vm)
 {
-    RenFont *font;
-    ASSERT_FOREIGN(vm, 1, &font);
+    RenFont **font = wrenGetSlotForeign(vm, 1);
     const char *text = wrenGetSlotString(vm, 2);
     int x = wrenGetSlotDouble(vm, 3);
     int y = wrenGetSlotDouble(vm, 4);
     RenColor color;
     unpackColor(vm, 5, &color);
-    x = rencache_draw_text(font, text, x, y, color);
+    x = rencache_draw_text(*font, text, x, y, color);
     RETURN_NUM(vm, x);
 }
 

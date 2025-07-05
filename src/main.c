@@ -182,13 +182,16 @@ int main(int argc, char **argv)
                         "// import \"system\" for Program\n"
                         "import \"core\" for Core\n"
                         "\n"
-                        "var core = Core.new()\n"
+                        "Core.init()\n"
+                        "Core.run()\n"
+                        /*
                         "var res = Fiber.new { core.run() }.try()\n"
                         "\n"
                         "if (res is String) {\n"
                         "	System.print(\"Error: \" + res.toString)\n"
                         "	Fiber.new { core.onError() }.try()\n"
                         "}\n"
+                        */
                         /*
                         "local core\n"
                         "xpcall(function()\n"

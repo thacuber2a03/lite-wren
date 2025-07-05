@@ -21,33 +21,30 @@ static void apiAllocateFont(WrenVM *vm)
 
 static void apiFinalizeFont(void *data)
 {
-    RenFont *self = (RenFont *)data;
-    if (self)
-        rencache_free_font(self);
+    RenFont **self = (RenFont **)data;
+    if (*self)
+        rencache_free_font(*self);
 }
 
 static void f_set_tab_width(WrenVM *vm)
 {
-    RenFont *self;
-    ASSERT_FOREIGN(vm, 1, &self);
-    int n = wrenGetSlotDouble(vm, 2);
-    ren_set_font_tab_width(self, n);
+    RenFont **self = wrenGetSlotForeign(vm, 0);
+    int n = wrenGetSlotDouble(vm, 1);
+    ren_set_font_tab_width(*self, n);
     RETURN_NULL(vm);
 }
 
 static void f_get_width(WrenVM *vm)
 {
-    RenFont *self;
-    ASSERT_FOREIGN(vm, 1, &self);
-    const char *text = wrenGetSlotString(vm, 2);
-    RETURN_NUM(vm, ren_get_font_width(self, text));
+    RenFont **self = wrenGetSlotForeign(vm, 0);
+    const char *text = wrenGetSlotString(vm, 1);
+    RETURN_NUM(vm, ren_get_font_width(*self, text));
 }
 
 static void f_get_height(WrenVM *vm)
 {
-    RenFont *self;
-    ASSERT_FOREIGN(vm, 1, &self);
-    RETURN_NUM(vm, ren_get_font_height(self));
+    RenFont **self = wrenGetSlotForeign(vm, 0);
+    RETURN_NUM(vm, ren_get_font_height(*self));
 }
 
 WrenForeignMethodFn apiBindRendererFontMethods(WrenVM *vm, bool isStatic, const char *signature)

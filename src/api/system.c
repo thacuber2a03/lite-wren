@@ -1,12 +1,11 @@
 #include "api.h"
-#include "lib/wren/wren.h"
 #include "rencache.h"
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_platform.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #ifdef _WIN32
@@ -492,11 +491,11 @@ WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool
     }
     else if (!strcmp(className, "Window"))
     {
-        if (!strcmp(signature, "setCursor(_)"))
+        if (!strcmp(signature, "cursor=(_)"))
             return f_set_cursor;
-        else if (!strcmp(signature, "setTitle(_)"))
+        else if (!strcmp(signature, "title=(_)"))
             return f_set_window_title;
-        else if (!strcmp(signature, "setMode(_)"))
+        else if (!strcmp(signature, "mode=(_)"))
             return f_set_window_mode;
         else if (!strcmp(signature, "hasFocus"))
             return f_window_has_focus;

@@ -13,17 +13,6 @@ extern struct APIContext api_context;
 #define RETURN_NULL(vm) wrenSetSlotNull(vm, 0)
 #define RETURN_STRING(vm, s) wrenSetSlotString(vm, 0, s)
 
-#define ASSERT_FOREIGN(vm, f, p)                                                                                       \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        if (wrenGetSlotType(vm, f) != WREN_TYPE_FOREIGN)                                                               \
-        {                                                                                                              \
-            THROW_ERROR(vm, "expected a foreign");                                                                     \
-            return;                                                                                                    \
-        }                                                                                                              \
-        *(p) = wrenGetSlotForeign(vm, f);                                                                              \
-    } while (0)
-
 #define THROW_ERROR(vm, e)                                                                                             \
     do                                                                                                                 \
     {                                                                                                                  \
