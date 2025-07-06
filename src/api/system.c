@@ -250,7 +250,7 @@ static void f_chdir(WrenVM *vm)
     const char *path = wrenGetSlotString(vm, 1);
     int err = chdir(path);
     if (err)
-        THROW_ERROR(vm, "chdir() failed");
+        THROW_ERROR(vm, strerror(errno));
     RETURN_NULL(vm);
 }
 
@@ -451,7 +451,7 @@ static void f_get_scale(WrenVM *vm)
 #endif
 }
 
-static void f_get_exename(WrenVM *vm)
+static void f_get_exepath(WrenVM *vm)
 {
 #define sz 2048
     char buf[2048];
@@ -532,8 +532,8 @@ WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool
             return f_get_scale;
         else if (!strcmp(signature, "platform"))
             return f_get_platform;
-        else if (!strcmp(signature, "executableName"))
-            return f_get_exename;
+        else if (!strcmp(signature, "executablePath"))
+            return f_get_exepath;
         else if (!strcmp(signature, "clipboard"))
             return f_get_clipboard;
         else if (!strcmp(signature, "clipboard=(_)"))

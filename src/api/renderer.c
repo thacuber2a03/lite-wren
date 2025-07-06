@@ -59,6 +59,7 @@ static void unpackColor(WrenVM *vm, int idx, RenColor *color)
     GET_INDEX(vm, 0, &color->r);
     GET_INDEX(vm, 1, &color->g);
     GET_INDEX(vm, 2, &color->b);
+    color->a = 255;
     if (wrenGetListCount(vm, idx) == 4)
         GET_INDEX(vm, 3, &color->a);
 

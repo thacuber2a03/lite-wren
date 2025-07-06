@@ -1,25 +1,48 @@
 import "renderer" for Renderer
-import "system" for Clock, Window, Events, Process
+import "system" for Clock, Window, Events, Process, Program, Filesystem
 import "core/config" for Config
-import "core/common" for Common, Vector
+import "core/common" for Common, Vector, Rect
 
 class CoreImpl {
 	construct new() {
-		_clipRectStack = []
+		_clipRectStack = [Rect.new()]
 	}
 
 	init() {
 		// Renderer.debug = true
 
+		var projectDir = Program.executableDirectory
+		var files = []
+		var args = Process.args
+		for (i in 1...args.count) {
+			var info = Filesystem.info(args[i]) || {}
+			var type = info["type"]
+			if (type == "file") {
+				files.add(Filesystem.abs(args[i]))
+			} else if (type == "dir") {
+				projectDir = args[i]
+			}
+		}
+
+		Filesystem.chdir(projectDir)
+
 		import "core/rootview" for RootView
+		// import "core/commandview" for CommandView
+		import "core/statusview" for StatusView
+
 		_rootView = RootView.new()
+		// _commandView = CommandView.new()
+		_statusView = StatusView.new()
+
+		// _rootView.rootNode.split("down", _commandView, true)
+		 _rootView.rootNode.split("down", _statusView, true)
 
 		redraw = true
 	}
 
 	try(f) {
 		var fib = Fiber.new {
-			// something else
+			// TODO(thacuber2a03): something else
 			f.call()
 		}
 		var res = fib.try()
@@ -76,15 +99,14 @@ class CoreImpl {
 				var t = try { onEvent(type, e[1..-1]) }
 				didKeymap = t[1] || didKeymap
 			}
-			this.redraw = true
+			redraw = true
 		}
 
 		if (mouseMoved) try { onEvent("mousemoved", [mouse["x"], mouse["y"], mouse["dx"], mouse["dy"]]) }
 
 		var size = Renderer.size
 
-		_rootView.size.x = size[0]
-		_rootView.size.y = size[1]
+		_rootView.size.set(size[0], size[1])
 		_rootView.update()
 		if (!redraw) return false
 		redraw = false
@@ -97,9 +119,8 @@ class CoreImpl {
 		}
 
 		Renderer.beginFrame()
-		_clipRectStack.clear()
-		_clipRectStack.add([0, 0, size[0], size[1]])
-		Renderer.clip = _clipRectStack[0]
+		_clipRectStack[0].set(0,0,size[0],size[1])
+		Renderer.clip = _clipRectStack[0].toList
 		_rootView.draw()
 		Renderer.endFrame()
 
@@ -129,6 +150,10 @@ class CoreImpl {
 	frameStart=(v) { _frameStart=v }
 	redraw { _redraw }
 	redraw=(v) { _redraw = v }
+
+	rootView { _rootView }
+	statusView { _statusView }
+	commandView { _commandView }
 }
 
 var Core = CoreImpl.new()
