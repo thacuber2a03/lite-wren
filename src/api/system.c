@@ -532,7 +532,7 @@ WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool
             return f_get_scale;
         else if (!strcmp(signature, "platform"))
             return f_get_platform;
-        else if (!strcmp(signature, "executablePath"))
+        else if (!strcmp(signature, "exePath"))
             return f_get_exepath;
         else if (!strcmp(signature, "clipboard"))
             return f_get_clipboard;

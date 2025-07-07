@@ -1,91 +1,3 @@
-import "renderer" for Renderer
-
-class Vector {
-	construct new(x, y) { set(x, y) }
-	construct new(v) { set(v) }
-
-	static zero { Vector.new(0,0) }
-
-	copy { Vector.new(this) }
-
-	set(x, y) {
-		_x = x
-		_y = y
-	}
-
-	set(v) {
-		_x = v.x
-		_y = v.y
-	}
-
-	- { Vector.new(-_x, -_y) }
-
-	+(other) { Vector.new(_x+other.x, _y+other.y) }
-	-(other) { Vector.new(_x-other.x, _y-other.y) }
-
-	*(other) {
-		if (other is Num) return Vector.new(_x*other, y*other)
-		Fiber.abort("expected Num, got %(other.type)")
-	}
-
-	[k] {
-		if (k is String) {
-			if (k == "x") return _x
-			if (k == "y") return _y
-			Fiber.abort("unknown field '%(k)'")
-		} else if (k is Num) {
-			if (k == 0) return _x
-			if (k == 1) return _y
-			Fiber.abort("unknown index '%(k)'")
-		} else {
-			Fiber.abort("can't index Vector with %(k.type)")
-		}
-	}
-
-	[k]=(v) {
-		if (k is String) {
-			if (k == "x") return _x = v
-			if (k == "y") return _y = v
-			Fiber.abort("unknown field '%(k)'")
-		} else if (k is Num) {
-			if (k == 0) return _x = v
-			if (k == 1) return _y = v
-			Fiber.abort("unknown index '%(k)'")
-		} else {
-			Fiber.abort("can't index Vector with %(k.type)")
-		}
-	}
-
-	x { _x }
-	x=(v) { _x=v }
-	y { _y }
-	y=(v) { _y=v }
-
-	toList { [_x, _y] }
-	toString { "(%(_x), %(_y))" }
-}
-
-class Rect {
-	construct new(x,y,w,h) { set(x,y,w,h) }
-	construct new(pos,size) { set(pos.x,pos.y,size.x,size.y) }
-	construct new() { set(0,0,0,0) }
-
-	set(x,y,w,h) { _data = [x,y,w,h] }
-
-	x { _data[0] }
-	y { _data[1] }
-	w { _data[2] }
-	h { _data[3] }
-
-	x=(v) { _data[0]=v }
-	y=(v) { _data[1]=v }
-	w=(v) { _data[2]=v }
-	h=(v) { _data[3]=v }
-
-	toList { _data }
-	toString { "(%(_data.join(", ")))" }
-}
-
 class Common {
 	static assert(cond) { assert(cond, "Assertion failed") }
 	static assert(cond, msg) {
@@ -138,20 +50,49 @@ class Common {
 		}
 		return a + (b - a) * t
 	}
+}
 
-	static drawText(font, color, text, align, rect) {
-		System.print("%(font), %(color), %(text), %(align), %(rect)")
-		var tw = font.width(text)
-		var th = font.height
-		if (align == "center") {
-			rect.x = rect.x + (rect.w - tw) / 2
-		} else if (align == "center") {
-			rect.x = rect.x + (rect.w - tw)
-		}
-		rect.y = (rect.y + (rect.h - th) / 2).round
-		return Vector.new(
-			Renderer.drawText(font, text, rect.x, rect.y, color),
-			rect.y + th
-		)
+class Vector {
+	construct new(x, y) { set(x, y) }
+
+	static zero { Vector.new(0, 0) }
+
+	copy { Vector.new(_x, _y) }
+
+	set(x, y) {
+		_x = x
+		_y = y
 	}
+
+	x { _x }
+	x=(v) { _x=v }
+	y { _y }
+	y=(v) { _y=v }
+
+	+(other) { Vector.new(_x+other.x, _y+other.y) }
+
+	toString { "(%(_x), %(_y))" }
+}
+
+class Rect {
+	construct new(x,y,w,h) { _data = [x,y,w,h] }
+
+	set(x,y,w,h) {
+		_data[0] = x
+		_data[1] = y
+		_data[2] = w
+		_data[3] = h
+	}
+
+	x { _data[0] }
+	x=(v) { _data[0]=v }
+	y { _data[1] }
+	y=(v) { _data[1]=v }
+	w { _data[2] }
+	w=(v) { _data[2]=v }
+	h { _data[3] }
+	h=(v) { _data[3]=v }
+
+	toList { _data }
+	toString { "(%(_data.join(", ")))" }
 }

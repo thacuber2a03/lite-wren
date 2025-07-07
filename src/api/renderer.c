@@ -117,7 +117,7 @@ WrenForeignMethodFn apiBindRendererMethods(WrenVM *vm, const char *className, bo
         return f_draw_text;
     if (!strcmp(signature, "drawRect_(_,_,_,_,_)"))
         return f_draw_rect;
-    if (!strcmp(signature, "setClipRect(_,_,_,_)"))
+    if (!strcmp(signature, "clipRect(_,_,_,_)"))
         return f_set_clip_rect;
 
     return NULL;
