@@ -1,3 +1,5 @@
+import "renderer" for Renderer
+
 class Common {
 	static assert(cond) { assert(cond, "Assertion failed") }
 	static assert(cond, msg) {
@@ -50,6 +52,21 @@ class Common {
 		}
 		return a + (b - a) * t
 	}
+
+	static drawText(font, color, text, align, rect) {
+		var tw = font.width(text)
+		var th = font.height
+		if (align == "center") {
+			rect.x = rect.x + (rect.w - tw) / 2
+		} else if (align == "right") {
+			rect.x = rect.x + (rect.w - tw)
+		}
+		rect.y = (rect.y + (rect.h - th) / 2).round
+		return Vector.new(
+			Renderer.drawText(font, text, rect.x, rect.y, color),
+			rect.y + th
+		)
+	}
 }
 
 class Vector {
@@ -62,13 +79,25 @@ class Vector {
 	round { Vector.new(_x.round, _y.round) }
 
 	set(x, y) {
+		Common.assert(x is Num && y is Num, "set(x,y): expected x and y to be Num, were %(x.type) and %(y.type) respectively")
 		_x = x
 		_y = y
 	}
 
 	set(v) {
+		Common.assert(v is Vector, "set(v): expected v to be Vector, was %(v.type)")
 		_x = v.x
 		_y = v.y
+	}
+
+	min(v) {
+		Common.assert(v is Vector, "min(v): expected v to be Vector, was %(v.type)")
+		return Vector.new(_x.min(v.x), _y.min(v.y))
+	}
+
+	max(v) {
+		Common.assert(v is Vector, "max(v): expected v to be Vector, was %(v.type)")
+		return Vector.new(_x.max(v.x), _y.max(v.y))
 	}
 
 	x { _x }
@@ -77,34 +106,71 @@ class Vector {
 	y=(v) { _y=v }
 
 	+(other) { Vector.new(_x+other.x, _y+other.y) }
+	- { Vector.new(-_x, -_y) }
+	-(other) { this + -other }
 
 	*(other) {
 		if (other is Num) return Vector.new(_x*other, _y*other)
-		Fiber.abort("Vector * other: expected Num but got %(other.type)")
+		Fiber.abort("Vector * %(other): expected Num but got %(other.type)")
 	}
 
+	[k] {
+		if (k == "x" || k == 0) return _x
+		if (k == "y" || k == 1) return _y
+		Fiber.abort("attempt to access invalid field '%(k)'")
+	}
+
+	[k]=(v) {
+		if (k == "x" || k == 0) return _x=v
+		if (k == "y" || k == 1) return _y=v
+		Fiber.abort("attempt to set invalid field '%(k)'")
+	}
+
+	toList { [_x, _y] }
 	toString { "(%(_x), %(_y))" }
 }
 
 class Rect {
-	construct new(x,y,w,h) { _data = [x,y,w,h] }
-
-	set(x,y,w,h) {
-		_data[0] = x
-		_data[1] = y
-		_data[2] = w
-		_data[3] = h
+	construct new(x,y,w,h) {
+		_position = Vector.new(x,y)
+		_size = Vector.new(w,h)
 	}
 
-	x { _data[0] }
-	x=(v) { _data[0]=v }
-	y { _data[1] }
-	y=(v) { _data[1]=v }
-	w { _data[2] }
-	w=(v) { _data[2]=v }
-	h { _data[3] }
-	h=(v) { _data[3]=v }
+	construct new(pos, size) {
+		_position = pos
+		_size = size
+	}
 
-	toList { _data }
-	toString { "(%(_data.join(", ")))" }
+	copy { Rect.new(_position, _size) }
+
+	set(x,y,w,h) {
+		_position.set(x,y)
+		_size.set(w,h)
+	}
+
+	set(pos, size) {
+		_position = pos.copy
+		_size = size.copy
+	}
+
+	x { _position.x }
+	x=(v) { _position.x=v }
+	y { _position.y }
+	y=(v) { _position.y=v }
+	w { _size.x }
+	w=(v) { _size.x=v }
+	h { _size.y }
+	h=(v) { _size.y=v }
+
+	width { _size.x }
+	width=(v) { _size.x=v }
+	height { _size.y }
+	height=(v) { _size.y=v }
+
+	position { Vector.new(_position.x, _position.y) }
+	pos { position }
+	size { Vector.new(_size.x, _size.y) }
+
+	toList { [_position.x, _position.y, _size.x, size.y] }
+	toString { "%(_position)-%(size)" }
 }

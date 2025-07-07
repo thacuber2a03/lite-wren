@@ -2,8 +2,8 @@ import "renderer" for Renderer
 import "system" for Clock, Window, Events, Process, Program, Filesystem
 
 import "core/common" for Common, Vector, Rect
-
 import "core/config" for Config
+import "core/style" for Style
 
 class Core {
 	construct new() {
@@ -29,7 +29,13 @@ class Core {
 
 	init() {
 		import "core/rootview" for RootView
+		import "core/statusview" for StatusView
+
 		_rootView = RootView.new()
+		_statusView = StatusView.new()
+		_statusView.showMessage("i", Style.text, "i farded,,,")
+
+		_rootView.rootNode.split("down", _statusView, true)
 	}
 
 	activeView=(view) {
@@ -38,6 +44,26 @@ class Core {
 			_lastActiveView = _activeView
 			_activeView = view
 		}
+	}
+
+	activeView { _activeView }
+	lastActiveView { _lastActiveView }
+
+	pushClipRect(r) {
+		r = r.copy
+		var r2 = _clipRectStack[-1].copy
+		var c = r.pos + r.size
+		var c2 = r2.pos + r2.size
+		r.pos.set(r.pos.max(r2.pos))
+		c.set(c.min(c2))
+		r.size.set(c-r.pos)
+		_clipRectStack.add(r)
+		Renderer.clipRect = r
+	}
+
+	popClipRect() {
+		_clipRectStack.removeAt(-1)
+		Renderer.clipRect = _clipRectStack[-1]
 	}
 
 	try(f) {
@@ -104,7 +130,7 @@ class Core {
 
 		Renderer.beginFrame()
 		_clipRectStack[0].set(0,0,size[0], size[1])
-		Renderer.clipRect = _clipRectStack[0].toList
+		Renderer.clipRect = _clipRectStack[0]
 		_rootView.draw()
 		Renderer.endFrame()
 

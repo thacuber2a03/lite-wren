@@ -5,12 +5,12 @@ import "core/common" for Common, Vector, Rect
 
 class View {
 	construct new() {
-		position = Vector.zero
-		size = Vector.zero
-		scroll = Vector.zero
-		scrollTo = Vector.zero
-		cursor = "arrow"
-		scrollable = false
+		_position = Vector.zero
+		_size = Vector.zero
+		_scroll = Vector.zero
+		_scrollTo = Vector.zero
+		_cursor = "arrow"
+		_scrollable = false
 	}
 
 	moveTowards(val, dest) { moveTowards(val, dest, 0.5) }
@@ -24,16 +24,23 @@ class View {
 	name { "---" }
 	scrollableSize { Num.infinity }
 
+	contentOffset { (position-scroll).round }
+
+	clampScrollPosition() {
+		var max = scrollableSize - _size.y
+		_scrollTo.y = _scrollTo.y.clamp(0, max)
+	}
+
 	update() {
-		// clampScrollPosition()
-		scroll.x = moveTowards(scroll.x, scrollTo.x, 0.3)
-		scroll.y = moveTowards(scroll.y, scrollTo.y, 0.3)
+		clampScrollPosition()
+		_scroll.x = moveTowards(_scroll.x, _scrollTo.x, 0.3)
+		_scroll.y = moveTowards(_scroll.y, _scrollTo.y, 0.3)
 	}
 
 	drawBackground(color) {
 		Renderer.drawRect(
-			position.x, position.y,
-			size.x+position.x%1, size.y+position.y%1,
+			_position.x, _position.y,
+			_size.x+_position.x%1, _size.y+_position.y%1,
 			color
 		)
 	}

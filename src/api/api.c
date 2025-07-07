@@ -82,7 +82,11 @@ const char *renderer_source =
     "    foreign static beginFrame()\n"
     "    foreign static endFrame()\n"
     "\n"
-    "    static clipRect=(v) { clipRect(v[0], v[1], v[2], v[3]) }\n"
+    "    static clipRect=(v) {\n"
+    "        if (v is List) return clipRect(v[0], v[1], v[2], v[3])\n"
+    "        return clipRect(v.x, v.y, v.width, v.height)\n"
+    "    }\n"
+    "\n"
     "    foreign static clipRect(x,y,w,h)\n"
     "\n"
     "    static checkColor_(c) {\n"
@@ -102,7 +106,8 @@ const char *renderer_source =
     "foreign class Font {\n"
     "    construct load(filename, size) {}\n"
     "    foreign tabWidth=(w)\n"
-    "    foreign width(text)\n"
+    "    width(obj) { width_(obj.toString) }\n"
+    "    foreign width_(text)\n"
     "    foreign height\n"
     "}\n";
 

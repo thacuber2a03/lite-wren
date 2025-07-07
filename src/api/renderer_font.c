@@ -51,7 +51,7 @@ WrenForeignMethodFn apiBindRendererFontMethods(WrenVM *vm, bool isStatic, const 
 {
     if (!strcmp(signature, "tabWidth=(_)"))
         return f_set_tab_width;
-    if (!strcmp(signature, "width(_)"))
+    if (!strcmp(signature, "width_(_)"))
         return f_get_width;
     if (!strcmp(signature, "height"))
         return f_get_height;
