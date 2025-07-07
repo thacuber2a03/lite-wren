@@ -7,10 +7,6 @@ import "core/config" for Config
 
 class Core {
 	construct new() {
-		_clipRectStack = [Rect.new(0,0,0,0)]
-	}
-
-	init() {
 		var projectDir = Program.exeDir
 		var args = Process.args
 		for (i in 1...args.count) {
@@ -21,10 +17,27 @@ class Core {
 				projectDir = args[i]
 			}
 		}
-
 		Filesystem.chdir(projectDir)
 
+		_clipRectStack = [Rect.new(0,0,0,0)]
+		_logItems = []
+		_docs = []
+		_threads = {} // setmetatable({}, { __mode = "k" })
+		_projectFiles = {}
 		_redraw = true
+	}
+
+	init() {
+		import "core/rootview" for RootView
+		_rootView = RootView.new()
+	}
+
+	activeView=(view) {
+		Common.assert(view, "Tried to set active view to null")
+		if (view != _activeView) {
+			_lastActiveView = _activeView
+			_activeView = view
+		}
 	}
 
 	try(f) {
@@ -72,11 +85,13 @@ class Core {
 			_redraw = true
 		}
 		if (mouseMoved) try {
-			onEvent("mousemoved", [mousePos.x, mousePos.y, mouseDelta.x, mouseDelta.y]) 
+			onEvent("mousemoved", [mousePos.x, mousePos.y, mouseDelta.x, mouseDelta.y])
 		}
 
 		var size = Renderer.size
 
+		_rootView.size.set(size[0], size[1])
+		_rootView.update()
 		if (!_redraw) return false
 		_redraw = false
 
@@ -90,6 +105,7 @@ class Core {
 		Renderer.beginFrame()
 		_clipRectStack[0].set(0,0,size[0], size[1])
 		Renderer.clipRect = _clipRectStack[0].toList
+		_rootView.draw()
 		Renderer.endFrame()
 
 		return false

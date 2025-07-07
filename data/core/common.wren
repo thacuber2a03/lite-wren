@@ -59,9 +59,16 @@ class Vector {
 
 	copy { Vector.new(_x, _y) }
 
+	round { Vector.new(_x.round, _y.round) }
+
 	set(x, y) {
 		_x = x
 		_y = y
+	}
+
+	set(v) {
+		_x = v.x
+		_y = v.y
 	}
 
 	x { _x }
@@ -70,6 +77,11 @@ class Vector {
 	y=(v) { _y=v }
 
 	+(other) { Vector.new(_x+other.x, _y+other.y) }
+
+	*(other) {
+		if (other is Num) return Vector.new(_x*other, _y*other)
+		Fiber.abort("Vector * other: expected Num but got %(other.type)")
+	}
 
 	toString { "(%(_x), %(_y))" }
 }

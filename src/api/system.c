@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #ifdef _WIN32
@@ -442,7 +443,24 @@ static void f_get_platform(WrenVM *vm)
 
 static void f_get_scale(WrenVM *vm)
 {
-#if _WIN32
+    const char *scale = getenv("LITE_SCALE");
+    if (scale)
+    {
+        errno = 0;
+        char *end;
+        double num = strtod(scale, &end);
+        if (errno != 0)
+        {
+            char buf[256];
+            snprintf(buf, sizeof(buf), "error while parsing LITE_SCALE: %s", strerror(errno ? errno : EINVAL));
+            THROW_ERROR(vm, buf);
+            return;
+        }
+        RETURN_NUM(vm, num);
+        return;
+    }
+
+#ifdef _WIN32
     float dpi;
     SDL_GetDisplayDPI(0, NULL, &dpi, NULL);
     RETURN_NUM(vm, dpi / 96.0);
