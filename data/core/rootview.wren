@@ -36,8 +36,8 @@ class EmptyView is View {
 		drawBackground(Style.background)
 		var textSize = drawText(Vector.zero, List.filled(4,0))
 		drawText(Vector.new(
-			_position.x + Style.padding.x.max((_size.x-textSize.x)/2),
-			_position.y + (_size.y-textSize.y)/2
+			position.x + Style.padding.x.max((size.x-textSize.x)/2),
+			position.y + (size.y-textSize.y)/2
 		), Style.dim)
 	}
 }
@@ -101,6 +101,7 @@ class Node {
 	}
 
 	position { _position }
+	size { _size }
 }
 
 class RootView is View {
@@ -112,8 +113,9 @@ class RootView is View {
 	}
 
 	update() {
-		// _rootNode.position.set(_position)
-		// _rootNode.size.set(_size)
+		super()
+		_rootNode.position.set(this.position)
+		_rootNode.size.set(this.size)
 		_rootNode.update()
 		_rootNode.updateLayout()
 	}
