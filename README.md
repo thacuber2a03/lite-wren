@@ -40,4 +40,4 @@ core will likely not be merged. Bug reports and bug fixes are welcome.
 This project is free software; you can redistribute it and/or modify it under
 the terms of the MIT license. See [LICENSE](LICENSE) for details.
 
--# yeah, I really did just find and replace over the entire file
+note from @thacuber2a03: yeah, I really did just find and replace over the entire file
