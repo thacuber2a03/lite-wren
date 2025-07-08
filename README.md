@@ -3,12 +3,16 @@
 
 A lightweight text editor written in ~~Lua~~ Wren
 
-* **[Get lite-wren](https://github.com/rxi/lite-wren/releases/latest)** — Download
+> [!NOTE]
+> yeah, I really did just find and replace over the entire file.
+> don't click any of the links, none of them exist
+
+* **[Get lite-wren](https://github.com/thacuber2a03/lite-wren/releases/latest)** — Download
   for Windows and Linux
 * **[Get started](doc/usage.md)** — A quick overview on how to get started
-* **[Get plugins](https://github.com/rxi/lite-wren-plugins)** — Add additional
+* **[Get plugins](https://github.com/thacuber2a03/lite-wren-plugins)** — Add additional
   functionality
-* **[Get color themes](https://github.com/rxi/lite-wren-colors)** — Add additional colors
+* **[Get color themes](https://github.com/thacuber2a03/lite-wren-colors)** — Add additional colors
   themes
 
 ## Overview
@@ -18,8 +22,8 @@ possible; easy to modify and extend, or to use without doing either.
 
 ## Customization
 Additional functionality can be added through plugins which are available from
-the [plugins repository](https://github.com/rxi/lite-wren-plugins); additional color
-themes can be found in the [colors repository](https://github.com/rxi/lite-wren-colors).
+the [plugins repository](https://github.com/thacuber2a03/lite-wren-plugins); additional color
+themes can be found in the [colors repository](https://github.com/thacuber2a03/lite-wren-colors).
 The editor can be customized by making changes to the
 [user module](data/user/init.lua).
 
@@ -32,12 +36,10 @@ to the ~~Lua~~ Wren portion of the code.
 ## Contributing
 Any additional functionality that can be added through a plugin should be done
 so as a plugin, after which a pull request to the
-[plugins repository](https://github.com/rxi/lite-wren-plugins) can be made. In hopes
+[plugins repository](https://github.com/thacuber2a03/lite-wren-plugins) can be made. In hopes
 of remaining lightweight, pull requests adding additional functionality to the
 core will likely not be merged. Bug reports and bug fixes are welcome.
 
 ## License
 This project is free software; you can redistribute it and/or modify it under
 the terms of the MIT license. See [LICENSE](LICENSE) for details.
-
-note from @thacuber2a03: yeah, I really did just find and replace over the entire file
