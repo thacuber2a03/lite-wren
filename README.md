@@ -45,4 +45,4 @@ This project is free software; you can redistribute it and/or modify it under
 the terms of the MIT license. See [LICENSE](LICENSE) for details.
 
 ## Credit where credit's due
-[rxi](https://github.com/rxi) was the one who originally made this project; I forked it and translated the code into Wren. go give them some love, they made really cool stuff \^\-\^
+[rxi](https://github.com/rxi) was the one who originally made this project; I forked it and translated the code into Wren. go give them some love, they make really awesome stuff \^\-\^
