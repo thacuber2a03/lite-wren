@@ -3,6 +3,7 @@ import "system" for Program
 
 import "core" for Core
 import "core/common" for Common, Vector, Rect
+import "core/keymap" for Keymap
 import "core/style" for Style
 import "core/view" for View
 
@@ -25,7 +26,7 @@ class EmptyView is View {
 		pos.y = pos.y + (dh - th * 2 - Style.padding.y) / 2
 		var w = 0
 		for (line in lines) {
-			var text = line["fmt"].replace("{}", line["cmd"])
+			var text = line["fmt"].replace("{}", Keymap.binding(line["cmd"]))
 			w = w.max(Renderer.drawText(Style.font, text, pos.x+Style.padding.x, pos.y, color))
 			pos.y = pos.y + th + Style.padding.y
 		}
@@ -111,6 +112,13 @@ class Node {
 		Common.assert(_type == "leaf", "Tried to set active view on non-leaf node")
 		_activeView = view
 		Core.activeView = view
+	}
+
+	getNodeForView(view) {
+		for (v in _views) {
+			if (v == view) return this
+		}
+		if (_type != "leaf") return _a.getNodeForView(view) || _b.getNodeForView(view)
 	}
 
 	dividerRect {
@@ -223,6 +231,8 @@ class RootView is View {
 		_deferredDraws = []
 		_mouse = Vector.zero
 	}
+
+	activeNode { _rootNode.getNodeForView(Core.activeView) }
 
 	update() {
 		super()

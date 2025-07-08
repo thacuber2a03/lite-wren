@@ -1,8 +1,9 @@
 import "renderer" for Renderer
-import "system" for Clock, Window, Events, Process, Program, Filesystem
+import "system" for Clock, Window, Events, Process, Program, Filesystem, OS
 
 import "core/common" for Common, Vector, Rect
 import "core/config" for Config
+import "core/keymap" for Keymap
 import "core/style" for Style
 
 class Core {
@@ -28,14 +29,22 @@ class Core {
 	}
 
 	init() {
+		import "core/command" for Command
+
 		import "core/rootview" for RootView
 		import "core/statusview" for StatusView
 
 		_rootView = RootView.new()
 		_statusView = StatusView.new()
-		_statusView.showMessage("i", Style.text, "i farded,,,")
+
+		// NOTE(thacuber2a03): :pensive:
+		log("is this real-lite...\n...or is this just Fanta:tm: sea...")
 
 		_rootView.rootNode.split("down", _statusView, true)
+
+		Command.addDefaults()
+
+		Command.perform("core:open-log")
 	}
 
 	activeView=(view) {
@@ -66,6 +75,20 @@ class Core {
 		Renderer.clipRect = _clipRectStack[-1]
 	}
 
+	log_(icon, iconColor, text) {
+		if (icon) _statusView.showMessage(icon, iconColor, text)
+
+		// TODO(thacuber2a03): <3 (figure out how to get line information, *quick*)
+		var item = { "at": "your heart <3 (we don't have debug info yet)", "text": text, "time": OS.time }
+		_logItems.add(item)
+		if (_logItems.count > Config.maxLogItems) _logItems.removeAt(1)
+		return item
+	}
+
+	log(text)      { log_("i", Style.text, text)   }
+	logQuiet(text) { log_(null, null, text)        }
+	error(text)    { log_("!", Style.accent, text) }
+
 	try(f) {
 		f = Fiber.new(f)
 		var res = f.try()
@@ -82,6 +105,10 @@ class Core {
 		var didKeymap = false
 		if (type == "textinput") {
 
+		} else if (type == "keypressed") {
+			didKeymap = Keymap.onKeyPressed(params[0])
+		} else if (type == "keyreleased") {
+			Keymap.onKeyReleased(params[0])
 		} else if (type == "quit") {
 			quit()
 		}
@@ -149,6 +176,9 @@ class Core {
 
 	redraw { _redraw }
 	redraw=(v) { _redraw=v }
+
+	logItems { _logItems }
+	rootView { _rootView }
 }
 
 Core = Core.new()

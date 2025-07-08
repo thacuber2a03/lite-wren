@@ -1,4 +1,5 @@
 #include "api.h"
+#include "lib/wren/wren.h"
 #include "rencache.h"
 #include <SDL2/SDL.h>
 #include <ctype.h>
@@ -7,7 +8,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -79,7 +82,7 @@ top:
             INSERT_IN_LIST(Double, 2, e.window.data2);
             return;
         }
-        else if (e.window.event == SDL_WINDOWEVENT_EXPOSED)
+        if (e.window.event == SDL_WINDOWEVENT_EXPOSED)
         {
             rencache_invalidate();
             INSERT_IN_LIST(String, 0, "exposed");
@@ -325,7 +328,7 @@ static void f_get_file_info(WrenVM *vm)
 
     if (S_ISREG(s.st_mode))
         wrenSetSlotString(vm, 1, "file");
-    else if (S_ISDIR(s.st_mode))
+    if (S_ISDIR(s.st_mode))
         wrenSetSlotString(vm, 1, "dir");
     else
         wrenSetSlotNull(vm, 1);
@@ -392,6 +395,20 @@ static void f_exit(WrenVM *vm)
 {
     exit(wrenGetSlotDouble(vm, 1));
     RETURN_NULL(vm);
+}
+
+static void f_time(WrenVM *vm)
+{
+    RETURN_NUM(vm, time(NULL));
+}
+
+static void f_format_time(WrenVM *vm)
+{
+    char buf[200]; // size stolen from Lua
+    time_t t = (time_t)wrenGetSlotDouble(vm, 1);
+    struct tm *tmr = localtime(&t);
+    strftime(buf, sizeof buf, "%c", tmr);
+    RETURN_STRING(vm, buf);
 }
 
 static void f_fuzzy_match(WrenVM *vm)
@@ -497,69 +514,76 @@ WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool
     {
         if (!strcmp(signature, "now"))
             return f_now;
-        else if (!strcmp(signature, "sleep(_)"))
+        if (!strcmp(signature, "sleep(_)"))
             return f_sleep;
     }
-    else if (!strcmp(className, "Events"))
+    if (!strcmp(className, "Events"))
     {
         if (!strcmp(signature, "poll"))
             return f_poll_event;
-        else if (!strcmp(signature, "wait(_)"))
+        if (!strcmp(signature, "wait(_)"))
             return f_wait_event;
     }
-    else if (!strcmp(className, "Window"))
+    if (!strcmp(className, "Window"))
     {
         if (!strcmp(signature, "cursor=(_)"))
             return f_set_cursor;
-        else if (!strcmp(signature, "title=(_)"))
+        if (!strcmp(signature, "title=(_)"))
             return f_set_window_title;
-        else if (!strcmp(signature, "mode=(_)"))
+        if (!strcmp(signature, "mode=(_)"))
             return f_set_window_mode;
-        else if (!strcmp(signature, "hasFocus"))
+        if (!strcmp(signature, "hasFocus"))
             return f_window_has_focus;
     }
-    else if (!(strcmp(className, "Dialog") && strcmp(signature, "confirm(_,_)")))
+    if (!(strcmp(className, "Dialog") && strcmp(signature, "confirm(_,_)")))
     {
         return f_show_confirm_dialog;
     }
-    else if (!strcmp(className, "Filesystem"))
+    if (!strcmp(className, "Filesystem"))
     {
         if (!strcmp(signature, "list(_)"))
             return f_list_dir;
-        else if (!strcmp(signature, "chdir(_)"))
+        if (!strcmp(signature, "chdir(_)"))
             return f_chdir;
-        else if (!strcmp(signature, "abs(_)"))
+        if (!strcmp(signature, "abs(_)"))
             return f_absolute_path;
-        else if (!strcmp(signature, "info(_)"))
+        if (!strcmp(signature, "info(_)"))
             return f_get_file_info;
     }
-    else if (!strcmp(className, "Process"))
+    if (!strcmp(className, "Process"))
     {
         if (!strcmp(signature, "exec(_)"))
             return f_exec;
-        else if (!strcmp(signature, "args"))
+        if (!strcmp(signature, "args"))
             return f_args;
-        else if (!strcmp(signature, "exit(_)"))
+        if (!strcmp(signature, "exit(_)"))
             return f_exit;
     }
-    else if (!strcmp(className, "Program"))
+    if (!strcmp(className, "Program"))
     {
         if (!strcmp(signature, "version"))
             return f_get_version;
-        else if (!strcmp(signature, "scale"))
+        if (!strcmp(signature, "scale"))
             return f_get_scale;
-        else if (!strcmp(signature, "platform"))
+        if (!strcmp(signature, "platform"))
             return f_get_platform;
-        else if (!strcmp(signature, "exePath"))
+        if (!strcmp(signature, "exePath"))
             return f_get_exepath;
-        else if (!strcmp(signature, "clipboard"))
+        if (!strcmp(signature, "clipboard"))
             return f_get_clipboard;
-        else if (!strcmp(signature, "clipboard=(_)"))
+        if (!strcmp(signature, "clipboard=(_)"))
             return f_set_clipboard;
     }
-    else if (!(strcmp(className, "Text") && strcmp(signature, "fuzzyMatch(_,_)")))
+    if (!(strcmp(className, "Text") && strcmp(signature, "fuzzyMatch(_,_)")))
     {
         return f_fuzzy_match;
+    }
+    if (!strcmp(className, "OS"))
+    {
+        if (!strcmp(signature, "time"))
+            return f_time;
+        if (!strcmp(signature, "formatTime(_)"))
+            return f_format_time;
     }
 
     if (!isStatic)

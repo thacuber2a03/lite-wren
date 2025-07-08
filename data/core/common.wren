@@ -1,11 +1,36 @@
 import "renderer" for Renderer
 
+class ReverseIterator {
+	construct new(sequence) {
+		_buffer = []
+		for (item in sequence) _buffer.add(item)
+		_index = _buffer.count
+	}
+
+	iterate(iter) {
+		_index = _index - 1
+		return _index != 0 && _buffer
+	}
+
+	iteratorValue(iter) { iter[_index] }
+}
+
 class Common {
 	static assert(cond) { assert(cond, "Assertion failed") }
 	static assert(cond, msg) {
 		if (!cond) Fiber.abort(msg)
 		return cond
 	}
+
+	// ~~stolen~~ borrowed from https://github.com/BrianOtto/Recto, thanks
+	static upper(str) {
+        return str.bytes.map {|ord|
+            if (ord >= 97 && ord <= 122) ord = ord - 32
+            return String.fromByte(ord)
+        }.join()
+	}
+
+	static isSpace(b) { " \f\n\r\t\v".contains(c) }
 
 	static parseHexNumber(s) {
 		var n = 0
@@ -67,6 +92,8 @@ class Common {
 			rect.y + th
 		)
 	}
+
+	static reverse(iter) { ReverseIterator.new(iter) }
 }
 
 class Vector {
