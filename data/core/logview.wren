@@ -34,22 +34,11 @@ class LogView is View {
 		var resx = x
 		var resy = y
 
-		var f = Fn.new{|line|
+		Common.lines(text) {|line|
 			resy = y
 			resx = Renderer.drawText(Style.font, line, x, y, color)
 			y = y + th
 		}
-
-		var line = ""
-		for (c in text) {
-			if (c == "\n") {
-				f.call(line)
-				line = ""
-			} else {
-				line = line + c
-			}
-		}
-		if (line != "") f.call(line)
 
 		return Vector.new(resx, resy)
 	}
@@ -65,17 +54,15 @@ class LogView is View {
 			var x = off.x + Style.padding.x
 			var item = Core.logItems[i]
 			var time = OS.formatTime(item["time"])
-			x = Renderer.drawText(Style.font, time, x, y, Style.dim)
-			x = x + Style.padding.x
+			x = Renderer.drawText(Style.font, time, x, y, Style.dim) + Style.padding.x
 			var subx = x
 			var pos = drawTextMultiline_(Style.font, item["text"], x, y, Style.text)
-			x = pos.x
-			y = pos.y
-			Renderer.drawText(Style.font, " at %(item["at"])", x, y, Style.dim)
-			y = y + th
+			Renderer.drawText(Style.font, " at %(item["at"])", pos.x, pos.y, Style.dim)
+			y = pos.y + th
 			if (item["info"]) {
 				var pos = drawTextMultiline_(Style.font, item["info"], subx, y, Style.dim)
-				y = y + th
+				subx = pos.x
+				y = pos.y + th
 			}
 			y = y + Style.padding.y
 		}

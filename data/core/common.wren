@@ -1,20 +1,5 @@
 import "renderer" for Renderer
 
-class ReverseIterator {
-	construct new(sequence) {
-		_buffer = []
-		for (item in sequence) _buffer.add(item)
-		_index = _buffer.count
-	}
-
-	iterate(iter) {
-		_index = _index - 1
-		return _index != 0 && _buffer
-	}
-
-	iteratorValue(iter) { iter[_index] }
-}
-
 class Common {
 	static assert(cond) { assert(cond, "Assertion failed") }
 	static assert(cond, msg) {
@@ -93,7 +78,18 @@ class Common {
 		)
 	}
 
-	static reverse(iter) { ReverseIterator.new(iter) }
+	static lines(s, f) {
+		var line = ""
+		for (c in s) {
+			if (c == "\n") {
+				f.call(line)
+				line = ""
+			} else {
+				line = line + c
+			}
+		}
+		if (line != "") f.call(line)
+	}
 }
 
 class Vector {
