@@ -1,6 +1,7 @@
 import "renderer" for Renderer
 
 import "core" for Core
+import "core/config" for Config
 import "core/common" for Common, Vector, Rect
 import "core/style" for Style
 
@@ -59,6 +60,19 @@ class View {
 		}
 		_hoveredScrollbar = scrollbarOverlapsPoint(pos)
 	}
+
+	onTextInput(text) { /* no-op */ }
+
+	onMouseWheel(scroll) {
+		if (_scrollable) {
+			_scrollTo.y = _scrollTo.y + scroll * -Config.mouseWheelScroll
+		}
+	}
+
+	contentBounds { Rect.new(
+		scroll.x, scroll.y,
+		scroll.x+size.x, scroll.y+size.y
+	) }
 
 	contentOffset { (position-scroll).round }
 

@@ -163,7 +163,7 @@ class Doc {
 			var i = sortPositions_(_selection.a, _selection.b)
 			return Selection.new(i[0], i[1])
 		}
-		return _selection
+		return _selection.copy
 	}
 
 	// TODO(thacuber2a03): I can't tell if this is great or if it's horrible

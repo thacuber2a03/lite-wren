@@ -113,9 +113,7 @@ class Core {
 	try(f) {
 		f = Fiber.new(f)
 		var res = f.try()
-		if (f.error) {
-			error(f.error)
-		}
+		if (f.error) error(f.error)
 		return [!f.error, res]
 	}
 

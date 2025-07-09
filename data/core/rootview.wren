@@ -143,11 +143,31 @@ class Node {
 		Core.activeView = view
 	}
 
+	viewIndex(view) {
+		for (i in 0..._views.count) if (_views[i] == view) return i
+	}
+
 	getNodeForView(view) {
 		for (v in _views) {
 			if (v == view) return this
 		}
 		if (_type != "leaf") return _a.getNodeForView(view) || _b.getNodeForView(view)
+	}
+
+	parentNode(root) {
+		if (root.a == this || root.b == this) {
+			return root
+		} else if (root.type != leaf) {
+			return parentNode(root.a) || parentNode(root.b)
+		}
+	}
+
+	children { children([]) }
+	children(l) {
+		for (view in _views) l.add(view)
+		if (_a) _a.children(l)
+		if (_b) _b.children(l)
+		return l
 	}
 
 	dividerOverlappingPoint(pos) {
@@ -158,6 +178,7 @@ class Node {
 		r.position = r.position - p
 		r.size = r.size + p*2
 		if (pos.x > r.x && pos.y > r.y && pos.x < r.x + r.w && pos.y < r.y + r.h) return this
+
 		return _a.dividerOverlappingPoint(pos) || _b.dividerOverlappingPoint(pos)
 	}
 
@@ -167,7 +188,7 @@ class Node {
 
 		if (pos.x >= r.x && pos.y >= r.y &&
 		    pos.x < r.x + r.w * _views.count &&
-		    pos.y < r.y + r.h) return ((px - x) / w).floor + 1
+		    pos.y < r.y + r.h) return ((pos.x - r.x) / r.w).floor + 1
 	}
 
 	childOverlappingPoint(pos) {
@@ -237,7 +258,10 @@ class Node {
 		if (_type == "leaf") {
 			var av = _activeView
 			if (_views.count > 1) {
-
+				var tr = tabRect(0)
+				var th = tr.h
+				av.position.set(position.x, position.y + th)
+				av.size.set(size.x, size.y - th)
 			} else {
 				av.position.set(_position)
 				av.size.set(_size)
@@ -268,6 +292,29 @@ class Node {
 		var tr = tabRect(0)
 		var ds = Style.dividerSize
 		Core.pushClipRect(Rect.new(tr.pos, Vector.new(size.x, tr.h)))
+		Renderer.drawRect(tr.x, tr.y, size.x, tr.h, Style.background2)
+		Renderer.drawRect(tr.x, tr.y + tr.h - ds, size.x, ds, Style.divider)
+
+		for (i in 0..._views.count) {
+			var view = _views[i]
+			var tr = tabRect(i)
+			var text = view.name
+			var color = Style.dim
+			if (view == _activeView) {
+				color = Style.text
+				Renderer.drawRect(tr.x, tr.y, tr.w, tr.h, Style.background)
+				Renderer.drawRect(tr.x + tr.w, tr.y, ds, tr.h, Style.divider)
+				Renderer.drawRect(tr.x - ds, tr.y, ds, tr.h, Style.divider)
+			}
+			if (i == _hoveredTab) color = Style.text
+			Core.pushClipRect(tr)
+			tr.x = tr.x + Style.padding.x
+			tr.w = tr.w - Style.padding.x * 2
+			var align = Style.font.width(text) > tr.w ? "left" : "center"
+			Common.drawText(Style.font, color, text, align, tr)
+			Core.popClipRect()
+		}
+
 		Core.popClipRect()
 	}
 
@@ -305,6 +352,8 @@ class RootView is View {
 		_deferredDraws = []
 		_mouse = Vector.zero
 	}
+
+	deferDraw(f) { _deferredDraws.add(f) }
 
 	activeNode { _rootNode.getNodeForView(Core.activeView) }
 
@@ -374,6 +423,11 @@ class RootView is View {
 		} else {
 			Window.cursor = node.activeView.cursor
 		}
+	}
+
+	onMouseWheel(scroll) {
+		var node = _rootNode.childOverlappingPoint(_mouse)
+		node.activeView.onMouseWheel(scroll)
 	}
 
 	onTextInput(text) { Core.activeView.onTextInput(text) }
