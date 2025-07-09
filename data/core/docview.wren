@@ -29,4 +29,25 @@ class DocView is View {
 	scrollableSize { lineHeight * (_doc.lines.count - 1) + size.y }
 
 	font { _font }
+
+	lineHeight { (font.height * Config.lineHeight).floor }
+
+	doc { _doc }
+
+	onMousePressed(button, pos, clicks) {
+		var caught = super(button, pos, clicks)
+		if (caught) return
+	}
+
+	onMouseMoved(pos, delta) {
+		super(pos, delta)
+	}
+
+	draw() {
+		drawBackground(Style.background)
+
+		font.tabWidth = (font.width(" ") * Config.indentSize)
+
+		drawScrollbar()
+	}
 }

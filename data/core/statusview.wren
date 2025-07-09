@@ -2,8 +2,10 @@ import "system" for Clock
 import "renderer" for Font
 
 import "core" for Core
+import "core/command" for Command
 import "core/common" for Common, Vector, Rect
 import "core/config" for Config
+import "core/logview" for LogView
 import "core/style" for Style
 import "core/view" for View
 
@@ -16,9 +18,11 @@ class StatusView is View {
 		_messageTimeout = 0
 	}
 
-	onMousePressed(button, mousePos, mouseDelta, clicks) {
+	onMousePressed(button, pos, clicks) {
 		Core.activeView = Core.lastActiveView
-		// TODO(thacuber2a03): the rest
+		if (Clock.now < _messageTimeout && !(Core.activeView is LogView)) {
+			Command.perform("core:open-log")
+		}
 	}
 
 	showMessage(icon, iconColor, text) {

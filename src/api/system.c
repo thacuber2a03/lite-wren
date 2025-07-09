@@ -326,14 +326,73 @@ static void f_get_file_info(WrenVM *vm)
     wrenSetSlotDouble(vm, 2, s.st_size);
     wrenSetMapValue(vm, 0, 1, 2);
 
+    wrenSetSlotString(vm, 1, "type");
     if (S_ISREG(s.st_mode))
-        wrenSetSlotString(vm, 1, "file");
-    if (S_ISDIR(s.st_mode))
-        wrenSetSlotString(vm, 1, "dir");
+        wrenSetSlotString(vm, 2, "file");
+    else if (S_ISDIR(s.st_mode))
+        wrenSetSlotString(vm, 2, "dir");
     else
-        wrenSetSlotNull(vm, 1);
+        wrenSetSlotNull(vm, 2);
     wrenSetMapValue(vm, 0, 1, 2);
     // RETURN_MAP(vm, 0);
+}
+
+static void f_read_file(WrenVM *vm)
+{
+    const char *path = wrenGetSlotString(vm, 1);
+
+    FILE *fp = fopen(path, "rb");
+    if (!fp)
+        goto fail;
+
+    fseek(fp, 0, SEEK_END);
+    int size = ftell(fp);
+    rewind(fp);
+
+    char *contents = malloc(size + 1);
+    if (!contents)
+        goto fail;
+
+    if (!fread(contents, 1, size, fp))
+        goto fail;
+
+    contents[size - 1] = '\0';
+
+    RETURN_STRING(vm, contents);
+    free(contents);
+    fclose(fp);
+    return;
+
+fail:
+    if (fp)
+        fclose(fp);
+    if (contents)
+        free(contents);
+    THROW_ERROR(vm, strerror(errno));
+}
+
+static void f_write_file(WrenVM *vm)
+{
+    const char *path = wrenGetSlotString(vm, 1);
+    int len;
+    const char *contents = wrenGetSlotBytes(vm, 2, &len);
+
+    FILE *fp = fopen(path, "wb");
+    if (!fp)
+        goto fail;
+
+    if (fwrite(contents, 1, len, fp) != len)
+        goto fail;
+
+    fclose(fp);
+
+    RETURN_NULL(vm);
+    return;
+
+fail:
+    if (fp)
+        fclose(fp);
+    THROW_ERROR(vm, strerror(errno));
 }
 
 static void f_get_clipboard(WrenVM *vm)
@@ -549,6 +608,10 @@ WrenForeignMethodFn apiBindSystemMethods(WrenVM *vm, const char *className, bool
             return f_absolute_path;
         if (!strcmp(signature, "info(_)"))
             return f_get_file_info;
+        if (!strcmp(signature, "read(_)"))
+            return f_read_file;
+        if (!strcmp(signature, "write(_,_)"))
+            return f_write_file;
     }
     if (!strcmp(className, "Process"))
     {

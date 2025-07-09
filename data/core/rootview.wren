@@ -1,8 +1,9 @@
 import "renderer" for Renderer
-import "system" for Program
+import "system" for Program, Window
 
 import "core" for Core
 import "core/common" for Common, Vector, Rect
+import "core/docview" for DocView
 import "core/keymap" for Keymap
 import "core/style" for Style
 import "core/view" for View
@@ -66,6 +67,23 @@ class Node {
 		f.call(_b)
 	}
 
+	onMouseMoved(pos, delta) {
+		_hoveredTab = tabOverlappingPoint(pos)
+		if (_type == "leaf") {
+			_activeView.onMouseMoved(pos, delta)
+		} else {
+			propagate {|n| n.onMouseMoved(pos, delta) }
+		}
+	}
+
+	onMouseReleased(button, pos) {
+		if (_type == "leaf") {
+			_activeView.onMouseReleased(button, pos)
+		} else {
+			propagate {|n| n.onMouseReleased(button, pos) }
+		}
+	}
+
 	consume(node) {
 		_type = node.kind
 		_position = node.position
@@ -100,15 +118,26 @@ class Node {
 		return child
 	}
 
+	closeActiveView(root) {
+		_activeView.tryClose {
+			if (_views > 1) {
+				_views.remove(_activeView)
+				activeView = _views[idx.min(_views.count-1)]
+			} else {
+				Fiber.abort("hold up whar")
+			}
+		}
+	}
+
 	addView(view) {
 		Common.assert(_type == "leaf", "Tried to add view to non-leaf node")
 		Common.assert(!_locked, "Tried to add view to locked node")
 		if (_views.count >= 1 && _views[0] is EmptyView) _views.removeAt(-1)
 		_views.add(view)
-		setActiveView(view)
+		activeView = view
 	}
 
-	setActiveView(view) {
+	activeView=(view) {
 		Common.assert(_type == "leaf", "Tried to set active view on non-leaf node")
 		_activeView = view
 		Core.activeView = view
@@ -119,6 +148,40 @@ class Node {
 			if (v == view) return this
 		}
 		if (_type != "leaf") return _a.getNodeForView(view) || _b.getNodeForView(view)
+	}
+
+	dividerOverlappingPoint(pos) {
+		if (_type == "leaf") return
+
+		var p = Vector.new(6,6)
+		var r = dividerRect
+		r.position = r.position - p
+		r.size = r.size + p*2
+		if (pos.x > r.x && pos.y > r.y && pos.x < r.x + r.w && pos.y < r.y + r.h) return this
+		return _a.dividerOverlappingPoint(pos) || _b.dividerOverlappingPoint(pos)
+	}
+
+	tabOverlappingPoint(pos) {
+		if (_views.count == 1) return
+		var r = tabRect(0)
+
+		if (pos.x >= r.x && pos.y >= r.y &&
+		    pos.x < r.x + r.w * _views.count &&
+		    pos.y < r.y + r.h) return ((px - x) / w).floor + 1
+	}
+
+	childOverlappingPoint(pos) {
+		var child
+		if (_type == "leaf") return this
+		if (_type == "hsplit") child = pos.x < _b.position.x ? _a : _b
+		if (_type == "vsplit") child = pos.y < _b.position.y ? _a : _b
+		return child.childOverlappingPoint(pos)
+	}
+
+	tabRect(idx) {
+		var tw = Style.tabWidth.min((size.x / _views.count).ceil)
+		var h = Style.font.height + Style.padding.y * 2
+		return Rect.new(position.x + idx * tw, position.y, tw, h)
 	}
 
 	dividerRect {
@@ -201,6 +264,13 @@ class Node {
 		}
 	}
 
+	drawTabs() {
+		var tr = tabRect(0)
+		var ds = Style.dividerSize
+		Core.pushClipRect(Rect.new(tr.pos, Vector.new(size.x, tr.h)))
+		Core.popClipRect()
+	}
+
 	draw() {
 		if (_type == "leaf") {
 			if (_views.count > 1) drawTabs()
@@ -219,9 +289,13 @@ class Node {
 	size { _size }
 	views { _views }
 	divider { _divider }
+	divider=(v) { _divider=v }
 	a { _a }
 	b { _b }
+	locked { _locked }
 	locked=(v) { _locked=v }
+
+	activeView { _activeView }
 }
 
 class RootView is View {
@@ -233,6 +307,76 @@ class RootView is View {
 	}
 
 	activeNode { _rootNode.getNodeForView(Core.activeView) }
+
+	openDoc(doc) {
+		var node = activeNode
+		if (node.locked && Core.lastActiveView) {
+			Core.activeView = Core.lastActiveView
+			node = activeNode
+		}
+		Common.assert(!node.locked, "Cannot open doc on locked node")
+		for (view in node.views) {
+			if (view is DocView && view.doc == doc) {
+				node.activeView = view
+				return view
+			}
+		}
+		var view = DocView.new(doc)
+		node.addView(view)
+		_rootNode.updateLayout()
+		// view.scrollToLine(view.doc.selection, true, true)
+		return view
+	}
+
+	onMousePressed(button, pos, clicks) {
+		var div = _rootNode.dividerOverlappingPoint(pos)
+		if (div) {
+			_draggedDivider = div
+			return
+		}
+		var node = _rootNode.childOverlappingPoint(pos)
+		var idx = node.tabOverlappingPoint(pos)
+		if (idx) {
+			node.activeView = node.views[idx]
+			if (button == "middle") node.closeActiveView(_rootNode)
+		} else {
+			Core.activeView = node.activeView
+			node.activeView.onMousePressed(button, pos, clicks)
+		}
+	}
+
+	onMouseReleased(button, pos) {
+		if (_draggedDivider) _draggedDivider = null
+		_rootNode.onMouseReleased(button, pos)
+	}
+
+	onMouseMoved(pos, delta) {
+		if (_draggedDivider) {
+			var node = _draggedDivider
+			if (node.type == "hsplit") {
+				node.divider = node.divider + delta.x / node.size.x
+			} else {
+				node.divider = node.divider + delta.y / node.size.y
+			}
+			node.divider = node.divider.clamp(0.01, 0.99)
+			return
+		}
+
+		_mouse.set(pos)
+		_rootNode.onMouseMoved(pos, delta)
+
+		var node = _rootNode.childOverlappingPoint(pos)
+		var div = _rootNode.dividerOverlappingPoint(pos)
+		if (div) {
+			Window.cursor = div.type == "hsplit" ? "sizeh" : "sizev"
+		} else if (node.tabOverlappingPoint(pos)) {
+			Window.cursor = "arrow"
+		} else {
+			Window.cursor = node.activeView.cursor
+		}
+	}
+
+	onTextInput(text) { Core.activeView.onTextInput(text) }
 
 	update() {
 		super()

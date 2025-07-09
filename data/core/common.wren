@@ -102,24 +102,24 @@ class Vector {
 	round { Vector.new(_x.round, _y.round) }
 
 	set(x, y) {
-		Common.assert(x is Num && y is Num, "set(x,y): expected x and y to be Num, were %(x.type) and %(y.type) respectively")
+		Common.assert(x is Num && y is Num, "expected x and y to be Num, were %(x.type) and %(y.type) respectively")
 		_x = x
 		_y = y
 	}
 
 	set(v) {
-		Common.assert(v is Vector, "set(v): expected v to be Vector, was %(v.type)")
+		Common.assert(v is Vector, "expected v to be Vector, was %(v.type)")
 		_x = v.x
 		_y = v.y
 	}
 
 	min(v) {
-		Common.assert(v is Vector, "min(v): expected v to be Vector, was %(v.type)")
+		Common.assert(v is Vector, "expected v to be Vector, was %(v.type)")
 		return Vector.new(_x.min(v.x), _y.min(v.y))
 	}
 
 	max(v) {
-		Common.assert(v is Vector, "max(v): expected v to be Vector, was %(v.type)")
+		Common.assert(v is Vector, "expected v to be Vector, was %(v.type)")
 		return Vector.new(_x.max(v.x), _y.max(v.y))
 	}
 
@@ -134,7 +134,7 @@ class Vector {
 
 	*(other) {
 		if (other is Num) return Vector.new(_x*other, _y*other)
-		Fiber.abort("Vector * %(other): expected Num but got %(other.type)")
+		Fiber.abort("expected Num but got %(other.type)")
 	}
 
 	[k] {
@@ -164,6 +164,8 @@ class Rect {
 		_size = size
 	}
 
+	static zero { Rect.new(0,0,0,0) }
+
 	copy { Rect.new(_position, _size) }
 
 	set(x,y,w,h) {
@@ -190,9 +192,11 @@ class Rect {
 	height { _size.y }
 	height=(v) { _size.y=v }
 
-	position { Vector.new(_position.x, _position.y) }
+	position { _position }
 	pos { position }
-	size { Vector.new(_size.x, _size.y) }
+	position=(v) { _position=v }
+	size { _size }
+	size=(v) { _size=v }
 
 	toList { [_position.x, _position.y, _size.x, size.y] }
 	toString { "%(_position)-%(size)" }

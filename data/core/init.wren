@@ -3,23 +3,12 @@ import "system" for Clock, Window, Events, Process, Program, Filesystem, OS
 
 import "core/common" for Common, Vector, Rect
 import "core/config" for Config
+import "core/doc" for Doc
 import "core/keymap" for Keymap
 import "core/style" for Style
 
 class Core {
 	construct new() {
-		var projectDir = Program.exeDir
-		var args = Process.args
-		for (i in 1...args.count) {
-			var info = Filesystem.info(args[i]) || {}
-			if (info["type"] == "file") {
-				files.add(Filesystem.abs(args[i]))
-			} else if (info["type"] == "dir") {
-				projectDir = args[i]
-			}
-		}
-		Filesystem.chdir(projectDir)
-
 		_clipRectStack = [Rect.new(0,0,0,0)]
 		_logItems = []
 		_docs = []
@@ -30,21 +19,32 @@ class Core {
 
 	init() {
 		import "core/command" for Command
-
 		import "core/rootview" for RootView
 		import "core/statusview" for StatusView
 
+		var projectDir = Program.exeDir
+		var args = Process.args
+		var files = []
+		for (i in 1...args.count) {
+			var info = Filesystem.info(args[i]) || {}
+			if (info["type"] == "file") {
+				files.add(Filesystem.abs(args[i]))
+			} else if (info["type"] == "dir") {
+				projectDir = args[i]
+			}
+		}
+		Filesystem.chdir(projectDir)
+
 		_rootView = RootView.new()
 		_statusView = StatusView.new()
-
-		// NOTE(thacuber2a03): :pensive:
-		log("is this real-lite...\n...or is this just Fanta:tm: sea...")
 
 		_rootView.rootNode.split("down", _statusView, true)
 
 		Command.addDefaults()
 
 		Command.perform("core:open-log")
+
+		for (filename in files) _rootView.openDoc(openDoc(filename))
 	}
 
 	activeView=(view) {
@@ -75,6 +75,27 @@ class Core {
 		Renderer.clipRect = _clipRectStack[-1]
 	}
 
+	openDoc() {
+		var doc = Doc.new()
+		_docs.add(doc)
+		logQuiet("Opened new doc")
+		return doc
+	}
+
+	openDoc(filename) {
+		var absFilename = Filesystem.abs(filename)
+		for (doc in _docs) {
+			if (doc.filename && absFilename == Filesystem.abs(doc.filename)) {
+				return doc
+			}
+		}
+
+		var doc = Doc.new(filename)
+		_docs.add(doc)
+		logQuiet("Opened doc \"%(filename)\"")
+		return doc
+	}
+
 	log_(icon, iconColor, text) {
 		if (icon) _statusView.showMessage(icon, iconColor, text)
 
@@ -92,6 +113,9 @@ class Core {
 	try(f) {
 		f = Fiber.new(f)
 		var res = f.try()
+		if (f.error) {
+			error(f.error)
+		}
 		return [!f.error, res]
 	}
 
@@ -104,11 +128,19 @@ class Core {
 	onEvent(type, params) {
 		var didKeymap = false
 		if (type == "textinput") {
-
+			_rootView.onTextInput(params[0])
 		} else if (type == "keypressed") {
 			didKeymap = Keymap.onKeyPressed(params[0])
 		} else if (type == "keyreleased") {
 			Keymap.onKeyReleased(params[0])
+		} else if (type == "mousemoved") {
+			_rootView.onMouseMoved(Vector.new(params[0], params[1]), Vector.new(params[2], params[3]))
+		} else if (type == "mousepressed") {
+			_rootView.onMousePressed(params[0], Vector.new(params[1], params[2]), params[3])
+		} else if (type == "mousereleased") {
+			_rootView.onMouseReleased(params[0], Vector.new(params[1], params[2]))
+		} else if (type == "mousewheel") {
+			_rootView.onMouseWheel(params[0])
 		} else if (type == "quit") {
 			quit()
 		}

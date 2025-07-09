@@ -1,3 +1,5 @@
+import "system" for Filesystem
+
 import "core/common" for Common
 
 class Position {
@@ -9,43 +11,61 @@ class Position {
 
 	copy { Position.new(_doc, _line, _col) }
 
-	+(other) {
-		Common.assert(other is Position, "Position + other: expected Position, got %(other.type)")
-		Common.assert(_doc == other.doc, "Position + other: both Positions must point to the same Doc")
-		return Position.new(_doc, _line+other.line, _col+other.col)
+	sanitized { Position.new(_doc,
+		_line.clamp(0, _doc.lines.count-1),
+		_col.clamp(0, _doc.lines[_line].count-1)
+	) }
+
+	offsetBy(other) {
+		if (other is Fn) return other.call(this)
+
+		if (other is Position) {
+			Common.assert(_doc == other.doc, "both Positions must refer to the same doc")
+			return Position.new(_doc, _line+other.line, _col+other.col).sanitized
+		}
+
+		if (other is Num) {
+			var pos = sanitized
+			var line = pos.line
+			var col = pos.col
+			while (line > 0 && col < 0) {
+				line = line - 1
+				col = col + _doc.lines[line].count
+			}
+			while (line < _doc.lines.count-1 && col >= _doc.lines[line].count) {
+				col = col - _doc.lines[line].count
+				line = line + 1
+			}
+			return Position.new(_doc, line, col).sanitized
+		}
+
+		Fiber.abort("can't offset by a %(other.type)")
 	}
 
 	doc { _doc }
-	doc=(v) { _doc=v }
 	line { _line }
-	line=(v) { _line=v }
 	col { _col }
-	col=(v) { _col=v }
 }
 
 class Selection {
-	construct new(doc, l1, c1, l2, c2) {
-		_a = Position.new(doc, l1, c1)
-		_b = Position.new(doc, l2, c2)
+	construct fromCoords(doc, line, col) {
+		_a = Position.new(doc, line, col)
+		_b = _a.copy
 	}
 
-	construct new(doc, line, col) {
-		if (line is Position) {
-			Common.assert(col is Position)
-			_a = line
-			_b = col
-		} else {
-			_a = Position.new(doc, line, col)
-			_b = _a.copy
-		}
+	construct new(a, b) {
+		_a = a
+		_b = b
 	}
 
-	copy { Selection.new(_doc, _a.copy, _b.copy) }
+	copy { Selection.new(_a, _b) }
+
+	empty { _a.line == _b.line && _a.col == _b.col }
+
+	sanitized { Selection.new(_a.sanitized, _b.sanitized) }
 
 	a { _a }
-	a=(v) { _a=v }
 	b { _b }
-	b=(v) { _b=v }
 }
 
 class Doc {
@@ -58,14 +78,23 @@ class Doc {
 
 	reset() {
 		_lines = ["\n"]
-		_selection = Selection.new()
+		_selection = Selection.fromCoords(this, 0, 0)
 		// NOTE(thacuber2a03): currently not doing the index memory-saving technique
-		// -# holy shit, the one note that actually *is* a note
 		_undoStack = []
 		_redoStack = []
 		_cleanChangeID = 1
 		// _highlighter = Highlighter.new(this)
 		resetSyntax()
+	}
+
+	resetSyntax() {
+		var start = Position.new(this, 0, 0)
+		var sel = Selection.new(start, start.offsetBy(128))
+		// var syn = Syntax.get(_filename || "", sel.text)
+		// if (_syntax != syn) {
+		// 	_syntax = syn
+		// 	_highlighter.reset()
+		// }
 	}
 
 	load(filename) {
@@ -75,40 +104,53 @@ class Doc {
 		_lines = []
 
 		Common.lines(Filesystem.read(filename)) {|line|
-			if (line[-1] == "\r") _crlf = true
+			if (line.count != 0 && line[-1] == "\r") _crlf = true
 			_lines.add(line + "\n")
 		}
 
-		if (_lines.count ==) _lines.add("\n")
+		if (_lines.count == 0) _lines.add("\n")
+
 		resetSyntax()
+	}
+
+	save() {
+		Common.assert(_filename, "no filename set to default to")
+		save(_filename)
+	}
+
+	save(filename) {
+		var contents = _lines.map {|x| _crlf ? x.replace("\n", "\r\n") : x }.join()
+		Filesystem.write(filename, contents)
+
+		_filename = filename
+		resetSyntax()
+		clean()
 	}
 
 	name { _filename || "unsaved" }
 	dirty { _cleanChangeID != changeID }
-	clean { _cleanChangeID = changeID }
-	changeID { _undoStack.count }
+	clean() { _cleanChangeID = changeID }
+	changeID { _undoStack.count-1 }
 
-	setSelection(sel) { setSelection(sel, swap) }
+	selection=(sel) { setSelection(sel, false) }
 	setSelection(sel, swap) {
 		sel = sel.copy
 		if (sel is Position) {
-			sel.sanitize()
-			_selection.a = sel
-			_selection.b = sel.copy
+			_selection.a = sel.sanitized
+			_selection.b = _selection.b.copy
 		} else {
+			var a = sel.a
+			var b = sel.b
 			if (swap) {
-				var temp = sel.a
-				sel.a = sel.b
-				sel.b = temp
+				var temp = a
+				a = b
+				b = temp
 			}
-			sel.a.sanitize()
-			sel.b.sanitize()
-			_selection = sel
+			_selection = Selection.new(a, b)
 		}
 	}
 
 	sortPositions_(p1, p2) {
-		// NOTE(thacuber2a03): I love programming
 		return p1.line > p2.line ||
 		       p1.line == p2.line && p1.col > p2.col ?
 			       [p2.copy, p1.copy, true] :
@@ -118,27 +160,14 @@ class Doc {
 	selection { selection(false) }
 	selection(sort) {
 		if (sort) {
-			var i = sortPositions(_selection.a, _selection.b)
+			var i = sortPositions_(_selection.a, _selection.b)
 			return Selection.new(i[0], i[1])
 		}
 		return _selection
 	}
 
-	hasSelection {
-		var a = _selection.a
-		var b = _selection.b
-		return !(a.line == b.line && a.col == b.col)
-	}
+	// TODO(thacuber2a03): I can't tell if this is great or if it's horrible
+	sanitizeSelection() { selection = selection }
 
-	sanitizeSelection() { setSelection(selection) }
-
-	positionOffset(pos, other) {
-		if (other is Fn) return other.call(pos)
-
-		if (other is Num) {
-			Fiber.abort("TODO: byte offset")
-		}
-
-		if (other is Position) return sanitizePosition(pos + other)
-	}
+	lines { _lines }
 }

@@ -2,6 +2,7 @@ import "renderer" for Renderer
 
 import "core" for Core
 import "core/common" for Common, Vector, Rect
+import "core/style" for Style
 
 class View {
 	construct new() {
@@ -24,6 +25,41 @@ class View {
 	name { "---" }
 	scrollableSize { Num.infinity }
 
+	scrollbarRect {
+		var sz = scrollableSize
+		if (sz <= size.y || sz == Num.infinity) return Rect.zero
+		var h = 20.max(size.y * size.y / sz)
+		return Rect.new(
+			position.x + size.x - Style.scrollbarSize,
+			position.y + scroll.y * (size.y - h) / (sz - size.y),
+			Style.scrollbarSize,
+			h
+		)
+	}
+
+	scrollbarOverlapsPoint(p) {
+		var s = scrollbarRect
+		return p.x >= s.x - s.w * 3 && p.x < s.x + s.w &&
+		       p.y >= s.y && p.y < s.y + s.h
+	}
+
+	onMousePressed(button, pos, clicks) {
+		if (scrollbarOverlapsPoint(pos)) {
+			_draggingScrollbar = true
+			return true
+		}
+	}
+
+	onMouseReleased(button, pos) { _draggingScrollbar = false }
+
+	onMouseMoved(pos, delta) {
+		if (_draggingScrollbar) {
+			var delta = scrollableSize / size.y * delta.y
+			scrollTo.y = scrollTo.y + delta
+		}
+		_hoveredScrollbar = scrollbarOverlapsPoint(pos)
+	}
+
 	contentOffset { (position-scroll).round }
 
 	clampScrollPosition() {
@@ -43,6 +79,13 @@ class View {
 			_size.x+_position.x%1, _size.y+_position.y%1,
 			color
 		)
+	}
+
+	drawScrollbar() {
+		var r = scrollbarRect
+		var highlight = _hoveredScrollbar || _draggingScrollbar
+		var color = highlight ? Style.scrollbar2 : Style.scrollbar
+		Renderer.drawRect(r.x, r.y, r.w, r.h, color)
 	}
 
 	draw() {}
